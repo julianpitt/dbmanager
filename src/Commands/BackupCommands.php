@@ -8,7 +8,7 @@ use ZipArchive;
 class BackupCommands extends Command
 {
 
-    protected $name = 'dbmysql:backup';
+    protected $name = 'dbman:backup';
 
     protected $description = 'Run the backup';
 
@@ -27,7 +27,7 @@ class BackupCommands extends Command
         $backupZipFile = $this->createZip($files);
 
         if (filesize($backupZipFile) == 0) {
-            $this->warn('The zipfile that will be backupped has a filesize of zero.');
+            $this->warn('The zipfile that will be backed up has a filesize of zero.');
         }
 
         foreach ($this->getTargetFileSystems() as $fileSystem) {
@@ -54,7 +54,7 @@ class BackupCommands extends Command
     {
         $this->comment('Start zipping '.count($files).' files...');
 
-        $tempZipFile = tempnam(sys_get_temp_dir(), "db-data-manager-backup");
+        $tempZipFile = tempnam(sys_get_temp_dir(), "db-manager-backup");
 
         $zip = new ZipArchive();
         $zip->open($tempZipFile, ZipArchive::CREATE);
@@ -87,7 +87,7 @@ class BackupCommands extends Command
 
     protected function getTargetFileSystems()
     {
-        $fileSystems = config('db-data-manager.output.filesystem');
+        $fileSystems = config('db-manager.output.filesystem');
 
         if (is_array($fileSystems)) {
             return $fileSystems;
@@ -98,8 +98,8 @@ class BackupCommands extends Command
 
     protected function getBackupDestinationFileName()
     {
-        $backupDirectory = config('db-data-manager.output.location');
-        $backupFilename = $this->getPrefix().date('YmdHis').$this->getSuffix().'.zip';
+        $backupDirectory = config('db-manager.output.location');
+        $backupFilename = $this->getPrefix().$this->getFilename().$this->getSuffix().'.zip';
 
         return $backupDirectory.'/'.$backupFilename;
     }
@@ -110,7 +110,22 @@ class BackupCommands extends Command
             return $this->option('prefix');
         }
 
-        return config('db-data-manager.output.prefix');
+        $prefix = $this->getFixSpecialType(config('db-manager.output.prefix'));
+
+        return $prefix;
+    }
+
+    public function getFilename()
+    {
+        if ($this->option('filename') != '') {
+            return $this->option('filename');
+        }
+
+        if (config('db-manager.output.filename') != '') {
+            throw new \Exception('Filename not set in config');
+        }
+
+        return config('db-manager.output.filename');
     }
 
     public function getSuffix()
@@ -119,7 +134,18 @@ class BackupCommands extends Command
             return $this->option('suffix');
         }
 
-        return config('db-data-manager.output.suffix');
+        $suffix = $this->getFixSpecialType(config('db-manager.output.suffix'));
+
+        return $suffix;
+    }
+
+    public function getFixSpecialType($fix)
+    {
+        if($fix == 'datetime') {
+            return date('YmdHis');
+        } else {
+            return $fix;
+        }
     }
 
     public function copyFileToFileSystem($file, $fileSystem)
@@ -146,7 +172,7 @@ class BackupCommands extends Command
 
     protected function getDatabaseDump()
     {
-        $databaseBackupHandler = app()->make('JulianPitt\DBBackup\Helpers\BackupHelper');
+        $databaseBackupHandler = app()->make('JulianPitt\DBManager\Helpers\BackupHelper');
 
         $filesToBeBackedUp = $databaseBackupHandler->getFilesToBeBackedUp();
 

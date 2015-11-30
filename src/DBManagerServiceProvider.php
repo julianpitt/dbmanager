@@ -5,7 +5,7 @@ namespace JulianPitt\DBManager;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Routing\Router;
 
-class LaravelMySqlBackupServiceProvider extends ServiceProvider
+class DBManagerServiceProvider extends ServiceProvider
 {
     /**
      * Indicates if loading of the provider is deferred.
@@ -22,19 +22,19 @@ class LaravelMySqlBackupServiceProvider extends ServiceProvider
     public function boot()
     {
         // use this if your package has views
-        $this->loadViewsFrom(realpath(__DIR__.'/resources/views'), 'db-data-manager');
+        $this->loadViewsFrom(realpath(__DIR__.'/resources/views'), 'db-manager');
 
         // use this if your package has routes
         //$this->setupRoutes($this->app->router);
 
 
          $this->publishes([
-                 __DIR__.'/config/config.php' => config_path('LaravelMySqlBackup.php'),
+                 __DIR__.'/config/db-manager.php' => config_path('db-manager.php'),
          ]);
 
 
          $this->mergeConfigFrom(
-             __DIR__.'/config/config.php', 'db-data-manager'
+             __DIR__.'/config/db-manager.php', 'db-manager'
          );
     }
     /**
@@ -59,28 +59,28 @@ class LaravelMySqlBackupServiceProvider extends ServiceProvider
     public function register()
     {
         //$this->registerLaravelMySqlBackup();
-        $this->app['command.dbmysql:backup'] = $this->app->share(
+        $this->app['command.dbman:backup'] = $this->app->share(
             function ($app) {
                 return new Commands\BackupCommands();
             }
         );
 
-        $this->app['command.dbmysql:restore'] = $this->app->share(
+        $this->app['command.dbman:restore'] = $this->app->share(
             function ($app) {
                 return new Commands\RestoreCommands();
             }
         );
 
-        $this->commands(['command.dbmysql:backup', 'command.dbmysql:restore']);
+        $this->commands(['command.dbman:backup', 'command.dbman:restore']);
 
          config([
-                 'config/LaravelMySqlBackup.php',
+                 'config/db-manager.php',
          ]);
     }
-    private function registerLaravelMySqlBackup()
+    private function registerDBManager()
     {
-        $this->app->bind('LaravelMySQLBackup',function($app){
-            return new LaravelMySQLBackup($app);
+        $this->app->bind('DBManager',function($app){
+            return new DBManager($app);
         });
     }
 
@@ -92,8 +92,8 @@ class LaravelMySqlBackupServiceProvider extends ServiceProvider
     public function provides()
     {
         return [
-            'command.dbmysql:backup',
-            'command.dbmysql:restore',
+            'command.dbman:backup',
+            'command.dbman:restore',
         ];
     }
 

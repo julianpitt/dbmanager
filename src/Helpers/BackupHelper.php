@@ -1,6 +1,6 @@
 <?php namespace JulianPitt\DBManager\Helpers;
 
-use JulianPitt\DBManager\Classes\MySQLDatabase;
+use JulianPitt\DBManager\Databases\MySQLDatabase;
 use JulianPitt\DBManager\Console;
 use Config;
 use Exception;
@@ -63,7 +63,7 @@ class BackupHelper
         $dbDriver = config("database.connections.{$connectionName}.driver");
 
         if ($dbDriver != 'mysql') {
-            throw new Exception('DBBackup currently doesn\'t support your database');
+            throw new Exception('DBManager currently doesn\'t support your database');
         }
 
         return $this->getDatabaseConnection(config("database.connections.{$connectionName}"));

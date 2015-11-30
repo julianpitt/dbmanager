@@ -2,12 +2,11 @@
 
 namespace JulianPitt\DBManager\Databases\MySQL;
 
-use DB;
-use JulianPitt\DBManager\Interfaces\QueryInterface;
+use \DB;
+use JulianPitt\DBManager\Interfaces\QueryHandler;
 
-class MySqlQueries implements QueryInterface
+class MySqlQueries implements QueryHandler
 {
-
 
     public function getDatabases()
     {

@@ -1,10 +1,10 @@
-<?php namespace JulianPitt\DBManager\Classes;
+<?php namespace JulianPitt\DBManager\Databases;
 
 use JulianPitt\DBManager\Console;
 use Config;
-use JulianPitt\DBManager\Interfaces\DatabaseInterface;
+use JulianPitt\DBManager\Interfaces\DatabaseHandler;
 
-class MySQLDatabase implements DatabaseInterface
+class MySQLDatabase implements DatabaseHandler
 {
     protected $console;
     protected $database;
@@ -50,7 +50,7 @@ class MySQLDatabase implements DatabaseInterface
             escapeshellcmd($this->getSocketArgument())
         );
 
-        return $this->console->run($command, config('db-data-manager.output.timeoutInSeconds'));
+        return $this->console->run($command, config('db-manager.output.timeoutInSeconds'));
     }
 
     public function getFileExtension()
@@ -60,12 +60,12 @@ class MySQLDatabase implements DatabaseInterface
 
     protected function getDumpCommandPath()
     {
-        return config('db-data-manager.mysqlbinloc');
+        return config('db-manager.mysqlbinloc');
     }
 
     protected function useExtendedInsert()
     {
-        return config('db-data-manager.output.useExtendedInsert');
+        return config('db-manager.output.useExtendedInsert');
     }
 
     protected function getSocketArgument()

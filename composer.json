@@ -1,5 +1,5 @@
 {
-    "name": "julianpitt/dbmanager",
+    "name": "julianpitt/dbdatamanager",
     "description": "A simple package to backup and restore laravel table data",
     "keywords": [
         "league",
@@ -13,7 +13,7 @@
         {
             "name": ":Julian Pittas",
             "email": "julian.pittas@gmail.com",
-            "homepage": ":author_website",
+            "homepage": "https://github.com/julianpitt/",
             "role": "Developer"
         }
     ],
@@ -28,11 +28,6 @@
     "autoload": {
         "psr-4": {
             "JulianPitt\\DBManager\\": "src"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "JulianPitt\\DBManager\\Test\\": "tests"
         }
     },
     "scripts": {

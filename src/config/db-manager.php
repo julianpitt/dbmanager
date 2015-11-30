@@ -8,14 +8,15 @@ return [
     |--------------------------------------------------------------------------
     |
     | Set the location of the MySQL bin folder that mysqldump resides
-    | Default locations that can be used 'windows'|'linux'|'windowsxampp' or set the absolute path
-    | windows ->
-    | linux ->
-    | windowsxampp -> C:\xampp\mysql\bin
+    | Set the absolute path
+    | windows MySQL 5.0 -> C:\Program Files\MySQL\(mysqlversion)\
+    | linux -> /var/lib/mysql/
+    | windows xampp -> C:\xampp\mysql\bin\
+    | windows wamp -> C:\wamp\bin\mysql\(mysqlversion)\bin\
     |
     */
 
-    'mysqlbinloc' => 'windowsxampp',
+    'mysqlbinloc' => 'C:\xampp\mysql\bin\\',
 
 
     /*
@@ -32,12 +33,27 @@ return [
     'output' => [
         'prefix'        => 'datetime',
         'suffix'        => '',
+        'filename'      => 'db-manager ',
         'compress'      => false,
         'keeplastonly'  => true,
         'filesystem'    => 'local',
         'location'      => "/backups",
         'useExtendedInsert' => false,
-        'timeoutInSeconds'  => 60
+        'timeoutInSeconds'  => 60,
+        'tables'        => 'october'
     ],
+
+    'tables' => [
+        'october' => [
+            'system*',
+            'backend*',
+            'users'
+        ],
+        'laravel' => [
+            'users',
+            'migrations',
+            'password_resets'
+        ]
+    ]
 
 ];

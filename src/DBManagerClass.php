@@ -2,10 +2,10 @@
 
 namespace JulianPitt\DBManager;
 
-class LaravelMySqlBackup
+class DBManager
 {
     /**
-     * Create a new LaravelMySqlBackup Instance
+     * Create a new DBDataManager Instance
      */
     public function __construct()
     {

@@ -8,7 +8,7 @@ use ZipArchive;
 class RestoreCommands extends Command
 {
 
-    protected $name = 'dbmysql:restore';
+    protected $name = 'dbman:restore';
 
     protected $description = 'Restore the last backup';
 
@@ -36,7 +36,7 @@ class RestoreCommands extends Command
     {
         $this->comment('Start zipping '.count($files).' files...');
 
-        $tempZipFile = tempnam(sys_get_temp_dir(), "db-data-manager-backup");
+        $tempZipFile = tempnam(sys_get_temp_dir(), "db-manager-backup");
 
         $zip = new ZipArchive();
         $zip->open($tempZipFile, ZipArchive::CREATE);
@@ -69,7 +69,7 @@ class RestoreCommands extends Command
 
     protected function getTargetFileSystems()
     {
-        $fileSystems = config('db-data-manager.output.filesystem');
+        $fileSystems = config('db-manager.output.filesystem');
 
         if (is_array($fileSystems)) {
             return $fileSystems;
@@ -80,8 +80,8 @@ class RestoreCommands extends Command
 
     protected function getBackupDestinationFileName()
     {
-        $backupDirectory = config('db-data-manager.output.location');
-        $backupFilename = $this->getPrefix().date('YmdHis').$this->getSuffix().'.zip';
+        $backupDirectory = config('db-manager.output.location');
+        $backupFilename = $this->getPrefix().$this->getFilename().$this->getSuffix().'.zip';
 
         return $backupDirectory.'/'.$backupFilename;
     }
@@ -92,7 +92,20 @@ class RestoreCommands extends Command
             return $this->option('prefix');
         }
 
-        return config('db-data-manager.output.prefix');
+        return config('db-manager.output.prefix');
+    }
+
+    public function getFilename()
+    {
+        if ($this->option('filename') != '') {
+            return $this->option('filename');
+        }
+
+        if (config('db-manager.output.filename') != '') {
+            throw new \Exception('Filename not set in config');
+        }
+
+        return config('db-manager.output.filename');
     }
 
     public function getSuffix()
@@ -101,7 +114,7 @@ class RestoreCommands extends Command
             return $this->option('suffix');
         }
 
-        return config('db-data-manager.output.suffix');
+        return config('db-manager.output.suffix');
     }
 
     public function copyFileToFileSystem($file, $fileSystem)
@@ -127,7 +140,7 @@ class RestoreCommands extends Command
 
     protected function getDatabaseDump()
     {
-        $databaseBackupHandler = app()->make('Spatie\Backup\BackupHandlers\Database\DatabaseBackupHandler');
+        $databaseBackupHandler = app()->make('JulianPitt\DBManager\Helpers\BackupHelper');
 
         $filesToBeBackedUp = $databaseBackupHandler->getFilesToBeBackedUp();
 
