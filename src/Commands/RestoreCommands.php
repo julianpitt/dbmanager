@@ -36,7 +36,7 @@ class RestoreCommands extends Command
     {
         $this->comment('Start zipping '.count($files).' files...');
 
-        $tempZipFile = tempnam(sys_get_temp_dir(), "laravel-MySQL-backup-zip");
+        $tempZipFile = tempnam(sys_get_temp_dir(), "db-data-manager-backup");
 
         $zip = new ZipArchive();
         $zip->open($tempZipFile, ZipArchive::CREATE);
@@ -69,7 +69,7 @@ class RestoreCommands extends Command
 
     protected function getTargetFileSystems()
     {
-        $fileSystems = config('LaravelMySqlBackup.output.filesystem');
+        $fileSystems = config('db-data-manager.output.filesystem');
 
         if (is_array($fileSystems)) {
             return $fileSystems;
@@ -80,7 +80,7 @@ class RestoreCommands extends Command
 
     protected function getBackupDestinationFileName()
     {
-        $backupDirectory = config('LaravelMySqlBackup.output.location');
+        $backupDirectory = config('db-data-manager.output.location');
         $backupFilename = $this->getPrefix().date('YmdHis').$this->getSuffix().'.zip';
 
         return $backupDirectory.'/'.$backupFilename;
@@ -92,7 +92,7 @@ class RestoreCommands extends Command
             return $this->option('prefix');
         }
 
-        return config('LaravelMySqlBackup.output.prefix');
+        return config('db-data-manager.output.prefix');
     }
 
     public function getSuffix()
@@ -101,7 +101,7 @@ class RestoreCommands extends Command
             return $this->option('suffix');
         }
 
-        return config('LaravelMySqlBackup.output.suffix');
+        return config('db-data-manager.output.suffix');
     }
 
     public function copyFileToFileSystem($file, $fileSystem)

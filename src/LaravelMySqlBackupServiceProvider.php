@@ -22,7 +22,7 @@ class LaravelMySqlBackupServiceProvider extends ServiceProvider
     public function boot()
     {
         // use this if your package has views
-        $this->loadViewsFrom(realpath(__DIR__.'/resources/views'), 'LaravelMySqlBackup');
+        $this->loadViewsFrom(realpath(__DIR__.'/resources/views'), 'db-data-manager');
 
         // use this if your package has routes
         //$this->setupRoutes($this->app->router);
@@ -34,7 +34,7 @@ class LaravelMySqlBackupServiceProvider extends ServiceProvider
 
 
          $this->mergeConfigFrom(
-             __DIR__.'/config/config.php', 'LaravelMySqlBackup'
+             __DIR__.'/config/config.php', 'db-data-manager'
          );
     }
     /**

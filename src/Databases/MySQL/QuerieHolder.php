@@ -22,7 +22,7 @@ class MySqlQueries implements QueryInterface
         return DB::select(DB::raw(
             "select TABLE_NAME, COLUMN_NAME
             from information_schema.columns
-            where table_schema = ".$database."
+            where table_schema = ".$schema."
             order by table_name,ordinal_position"
         ));
     }
