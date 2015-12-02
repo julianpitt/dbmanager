@@ -2,6 +2,7 @@
 
 use JulianPitt\DBManager\Console;
 use Config;
+use JulianPitt\DBManager\Databases\MySQL\MySqlQueries;
 use JulianPitt\DBManager\Interfaces\DatabaseHandler;
 
 class MySQLDatabase implements DatabaseHandler
@@ -25,6 +26,7 @@ class MySQLDatabase implements DatabaseHandler
         $this->host = $host;
         $this->port = $port;
         $this->socket = $socket;
+        $this->queries = new MySqlQueries();
     }
 
     public function dump($destinationFile)
@@ -85,8 +87,46 @@ class MySQLDatabase implements DatabaseHandler
      *
      */
 
+    /**
+     * Checks the integrity of the database insert before performing any action
+     * this will only be used for restores where the backup file contains data only
+     *
+     * @return int
+     * @throws \Exception
+     */
     public function checkIntegrity()
     {
+        //Check the database exists
+        if(!$this->checkDatabase($this->database)) {
+            throw new \Exception("Integrity check failed! No " . $this->database . " database found");
+        }
 
+        return $this->checkTables($this->database);
+        //Check the tables exist
+        if(!$this->checkTables($this->database)) {
+            throw new \Exception("Integrity check failed! Tables are not the same");
+        }
+
+        return 1;
     }
+
+    public function checkDatabase($database)
+    {
+        foreach($this->queries->getDatabases() as $schema) {
+            if($database == $schema->Database)
+                return true;
+        }
+        return false;
+    }
+
+    public function checkTables($database)
+    {
+        return var_dump($this->queries->getTablesAndColumns($database));
+        foreach($this->queries->getTablesAndColumns() as $table) {
+            if($database == $schema->Database)
+                return true;
+        }
+        return false;
+    }
+
 }

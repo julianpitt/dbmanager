@@ -73,8 +73,8 @@ class BackupHelper
     {
         $tempFile = tempnam(sys_get_temp_dir(), "dbbackup");
 
-        $success = $this->getDatabase()->dump($tempFile);
-
+        //$success = $this->getDatabase()->dump($tempFile);
+        throw new Exception($this->getDatabase()->checkIntegrity());
         if (! $success || filesize($tempFile) == 0) {
             throw new Exception('Could not create backup of db');
         }

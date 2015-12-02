@@ -16,7 +16,9 @@ return [
     |
     */
 
-    'mysqlbinloc' => 'C:\xampp\mysql\bin\\',
+    'mysqlloc'      => 'C:\xampp\mysql\bin\\',
+
+    'mysqlbinloc'   => 'C:\xampp\mysql\bin\\',
 
 
     /*
@@ -40,7 +42,7 @@ return [
         'location'      => "/backups",
         'useExtendedInsert' => false,
         'timeoutInSeconds'  => 60,
-        'tables'        => 'october'
+        'tables'        => 'october',
     ],
 
     'tables' => [

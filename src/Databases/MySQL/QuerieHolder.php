@@ -10,20 +10,22 @@ class MySqlQueries implements QueryHandler
 
     public function getDatabases()
     {
-        return DB::select(DB::raw(
-            "SHOW SCHEMAS"
-        ));
+        return \DB::select("SHOW SCHEMAS");
     }
 
 
     public function getTablesAndColumns($schema)
     {
-        return DB::select(DB::raw(
-            "select TABLE_NAME, COLUMN_NAME
+        /*return DB::select("select TABLE_NAME, COLUMN_NAME
             from information_schema.columns
-            where table_schema = ".$schema."
-            order by table_name,ordinal_position"
-        ));
+            where table_schema = '".$schema."'
+            order by table_name,ordinal_position")->groupBy('table_name');*/
+
+        return DB::table("information_schema.columns")
+            ->select('TABLE_NAME', 'COLUMN_NAME')
+            ->where('table_schema', $schema)
+            ->orderBy('TABLE_NAME', 'ORDINAL_POSITION')
+            ->get();
     }
 
 }
