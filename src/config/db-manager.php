@@ -33,7 +33,7 @@ return [
     'output' => [
         'prefix'        => 'datetime',
         'suffix'        => '',
-        'filename'      => 'db-manager ',
+        'filename'      => '-db-manager',
         'compress'      => false,
         'keeplastonly'  => true,
         'filesystem'    => 'local',

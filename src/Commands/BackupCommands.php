@@ -30,6 +30,14 @@ class BackupCommands extends Command
             $this->warn('The zipfile that will be backed up has a filesize of zero.');
         }
 
+        $keepLastOnly = config('db-manager.output.keeplastonly');
+
+        if(!empty($keepLastOnly) && is_bool($keepLastOnly) && $keepLastOnly) {
+            foreach ($this->getTargetFileSystems() as $fileSystem) {
+                $this->deletePreviousBackups($fileSystem);
+            }
+        }
+
         foreach ($this->getTargetFileSystems() as $fileSystem) {
             $this->copyFileToFileSystem($backupZipFile, $fileSystem);
         }
@@ -85,6 +93,19 @@ class BackupCommands extends Command
         $disk->getDriver()->writeStream($destination, fopen($file, 'r+'));
     }
 
+    protected function deleteTargetDirectoryFiles($fileSystem)
+    {
+        $disk = Storage::disk($fileSystem);
+
+        $destination = config('db-manager.output.location');
+
+        $files =  $disk->allfiles($destination);
+
+        $disk->deleteDirectory($destination);
+
+        return $files;
+    }
+
     protected function getTargetFileSystems()
     {
         $fileSystems = config('db-manager.output.filesystem');
@@ -117,11 +138,7 @@ class BackupCommands extends Command
 
     public function getFilename()
     {
-        if ($this->option('filename') != '') {
-            return $this->option('filename');
-        }
-
-        if (config('db-manager.output.filename') != '') {
+        if (empty(config('db-manager.output.filename'))) {
             throw new \Exception('Filename not set in config');
         }
 
@@ -183,6 +200,35 @@ class BackupCommands extends Command
         $this->comment('Database dumped');
 
         return $databaseBackupHandler->getFilesToBeBackedUp()[0];
+    }
+
+    public function deletePreviousBackups($fileSystem)
+    {
+        do {
+
+            $name = $this->ask('Are you sure you want to remove all previous backups? [y/n]');
+            if(strcasecmp ($name, "y") != 0 && strcasecmp ($name, "n") != 0) {
+                $this->info("Invalid response, type 'y' for yes or 'n' for no. Let's try again. This is serious, if it wasn't, I would've use the confirm method to write this");
+            }
+
+        } while(strcasecmp ($name, "y") != 0 && strcasecmp ($name, "n") != 0);
+
+
+        if (strcasecmp ($name, "y") != 0) {
+            $this->info("Skipped deleting all previous backups");
+            return true;
+        }
+
+        $this->info("Deleting all previous backups");
+
+        $deletedFiles = $this->deleteTargetDirectoryFiles($fileSystem);
+
+        foreach($deletedFiles as $file) {
+            $this->info("Deleted backup file " . $file);
+        }
+
+        return true;
+
     }
 
 }
