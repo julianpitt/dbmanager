@@ -47,9 +47,8 @@ return [
 
     'tables' => [
         'october' => [
-            'system*',
-            'backend*',
-            'users'
+            'users',
+            'system'
         ],
         'laravel' => [
             'users',

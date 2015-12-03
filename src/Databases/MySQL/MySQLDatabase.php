@@ -55,6 +55,31 @@ class MySQLDatabase implements DatabaseHandler
         return $this->console->run($command, config('db-manager.output.timeoutInSeconds'));
     }
 
+    public function runQuery($query)
+    {
+        /*
+         * Create temporary file with db credentials
+         */
+        $tempFileHandle = tmpfile();
+
+        fwrite($tempFileHandle,
+            "[client]".PHP_EOL.
+            "user = '".$this->user."'".PHP_EOL.
+            "password = '".$this->password."'".PHP_EOL.
+            "host = '".$this->host."'".PHP_EOL.
+            "port = '".$this->port."'".PHP_EOL
+        );
+        $temporaryCredentialsFile = stream_get_meta_data($tempFileHandle)['uri'];
+        $command = sprintf('%mysql --defaults-extra-file=%s -B %s -e "%s"',
+            $this->getDumpCommandPath(),
+            escapeshellarg($temporaryCredentialsFile),
+            escapeshellarg($this->database),
+            escapeshellarg($query)
+        );
+
+        return $this->console->run($command, config('db-manager.output.timeoutInSeconds'));
+    }
+
     public function getFileExtension()
     {
         return 'sql';
@@ -101,10 +126,10 @@ class MySQLDatabase implements DatabaseHandler
             throw new \Exception("Integrity check failed! No " . $this->database . " database found");
         }
 
-        return $this->checkTables($this->database);
+        $tables = $this->checkTables($this->database);
         //Check the tables exist
-        if(!$this->checkTables($this->database)) {
-            throw new \Exception("Integrity check failed! Tables are not the same");
+        if(isset($tables["notfound"]) && count($tables["notfound"]) > 0) {
+            throw new \Exception("Integrity check failed! Tables are not the same" . var_dump($tables["notfound"]));
         }
 
         return 1;
@@ -121,12 +146,68 @@ class MySQLDatabase implements DatabaseHandler
 
     public function checkTables($database)
     {
-        return var_dump($this->queries->getTablesAndColumns($database));
-        foreach($this->queries->getTablesAndColumns() as $table) {
-            if($database == $schema->Database)
-                return true;
+        $tablesToBackUp = $this->getTablesToBackUp();
+        $tablesInDatabase = $this->convertObjArr($this->queries->getTablesAndColumns($database));
+        $foundTables = [];
+
+        $index = 0;
+
+        foreach($tablesToBackUp as $table) {
+            if(isset($tablesInDatabase[$table])) {
+                $foundTables[] = $table;
+                unset($tablesToBackUp[$index]);
+            }
+            $index++;
         }
-        return false;
+
+        return [
+            "found" => $foundTables,
+            "notfound" => $tablesToBackUp
+        ];
+    }
+
+    public function getTablesToBackUp()
+    {
+        $backupTables = config('db-manager.output.tables');
+
+        if(empty($backupTables)) {
+           return "all";
+        }
+
+        $tables = config('db-manager.tables.' . $backupTables);
+
+        if(empty($tables)) {
+            return "all";
+        }
+
+        return $tables;
+    }
+
+    private function convertObjArr($objArr)
+    {
+        $returnArray = [];
+
+        foreach($objArr as $obj) {
+            if(isset($returnArray[$obj->TABLE_NAME])) {
+                $returnArray[$obj->TABLE_NAME][] = $obj->COLUMN_NAME;
+            } else {
+                $returnArray[$obj->TABLE_NAME] = [$obj->COLUMN_NAME];
+            }
+        }
+
+        return $returnArray;
+    }
+
+    private function in2DArray($array, $key, $val)
+    {
+        $index = 0;
+        foreach($array as $item) {
+            if(isset($item[$key]) && $item[$key] == $val) {
+                return $index;
+            }
+            $index++;
+        }
+        return -1;
     }
 
 }
