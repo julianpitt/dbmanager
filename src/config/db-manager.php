@@ -42,7 +42,7 @@ return [
         'location'      => "/backups",
         'useExtendedInsert' => false,
         'timeoutInSeconds'  => 60,
-        'tables'        => 'october',
+        'tables'        => 'laravel',
     ],
 
     'tables' => [
@@ -53,7 +53,8 @@ return [
         'laravel' => [
             'users',
             'migrations',
-            'password_resets'
+            'password_resets',
+            'doesnt_exist'
         ]
     ]
 

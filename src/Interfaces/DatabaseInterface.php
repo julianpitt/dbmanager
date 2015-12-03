@@ -6,7 +6,8 @@ interface DatabaseHandler
 {
 
     public function dump($destinationFile);
-    public function checkIntegrity();
+    public function checkBackupIntegrity($callIngClass);
+    public function checkRestoreIntegrity($callIngClass);
     public function getFileExtension();
 
 }

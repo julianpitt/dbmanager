@@ -69,22 +69,24 @@ class BackupHelper
         return $this->getDatabaseConnection(config("database.connections.{$connectionName}"));
     }
 
-    public function getDumpedDatabase()
+    public function getDumpedDatabase($commandClass)
     {
         $tempFile = tempnam(sys_get_temp_dir(), "dbbackup");
 
-        //$success = $this->getDatabase()->dump($tempFile);
-        throw new Exception($this->getDatabase()->checkIntegrity());
-        if (! $success || filesize($tempFile) == 0) {
+        $passedChecks = $this->getDatabase()->checkBackupIntegrity($commandClass);
+
+        $success = $this->getDatabase()->dump($tempFile);
+
+        if ((!$success || !$passedChecks) || filesize($tempFile) == 0 ) {
             throw new Exception('Could not create backup of db');
         }
 
         return $tempFile;
     }
 
-    public function getFilesToBeBackedUp()
+    public function getFilesToBeBackedUp($commandClass)
     {
-        return [$this->getDumpedDatabase()];
+        return [$this->getDumpedDatabase($commandClass)];
     }
 
     public function getFileExtension()

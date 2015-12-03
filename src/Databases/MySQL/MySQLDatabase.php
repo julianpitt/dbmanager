@@ -116,23 +116,27 @@ class MySQLDatabase implements DatabaseHandler
      * Checks the integrity of the database insert before performing any action
      * this will only be used for restores where the backup file contains data only
      *
+     * @param boolean
      * @return int
      * @throws \Exception
      */
-    public function checkIntegrity()
+    public function checkBackupIntegrity($commandClass)
     {
         //Check the database exists
         if(!$this->checkDatabase($this->database)) {
             throw new \Exception("Integrity check failed! No " . $this->database . " database found");
         }
 
-        $tables = $this->checkTables($this->database);
-        //Check the tables exist
-        if(isset($tables["notfound"]) && count($tables["notfound"]) > 0) {
-            throw new \Exception("Integrity check failed! Tables are not the same" . var_dump($tables["notfound"]));
+        return $this->checkTablesForBackup($this->database, $commandClass);
+    }
+
+    public function checkRestoreIntegrity($commandClass) {
+        //Check the database exists
+        if(!$this->checkDatabase($this->database)) {
+            throw new \Exception("Integrity check failed! No " . $this->database . " database found");
         }
 
-        return 1;
+        return $this->checkTablesForInsert($this->database, $commandClass);
     }
 
     public function checkDatabase($database)
@@ -164,6 +168,34 @@ class MySQLDatabase implements DatabaseHandler
             "found" => $foundTables,
             "notfound" => $tablesToBackUp
         ];
+    }
+
+    public function checkTablesForInsert( $database, $commandClass )
+    {
+        $tables = $this->checkTables($database);
+
+        return true;
+    }
+
+    public function checkTablesForBackup( $database, $commandClass )
+    {
+        $tables = $this->checkTables($database);
+
+        $commandClass->info("The following tables were found: \n-" . implode("\n-", $tables["found"]));
+
+        if(count($tables["found"]) <= 0) {
+            throw new \Exception("Integrity check failed! No tables to back up were found in the database");
+        }
+
+        //Check the tables exist
+        if(isset($tables["notfound"]) && count($tables["notfound"]) > 0) {
+            $commandClass->info("\nThe following tables were not found:\n-" . implode("\n-", $tables["notfound"]));
+            if(!$commandClass->confirm("Would you like to back up the tables that have been found?")) {
+                throw new \Exception("Integrity check failed! Some tables were not found");
+            }
+        }
+
+        return true;
     }
 
     public function getTablesToBackUp()

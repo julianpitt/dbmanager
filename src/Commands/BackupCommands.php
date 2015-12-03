@@ -191,7 +191,7 @@ class BackupCommands extends Command
     {
         $databaseBackupHandler = app()->make('JulianPitt\DBManager\Helpers\BackupHelper');
 
-        $filesToBeBackedUp = $databaseBackupHandler->getFilesToBeBackedUp();
+        $filesToBeBackedUp = $databaseBackupHandler->getFilesToBeBackedUp($this);
 
         if (count($filesToBeBackedUp) != 1) {
             throw new \Exception('could not backup db');
