@@ -2,6 +2,7 @@
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use JulianPitt\DBManager\Helpers\FileHelper;
 use Symfony\Component\Console\Input\InputOption;
 use ZipArchive;
 
@@ -18,31 +19,64 @@ class BackupCommands extends Command
 
         $files = $this->getAllTablesToBeBackedUp();
 
-        if (count($files) == 0) {
+        if (count($files) <= 0) {
             $this->info('Nothing to backup');
-
             return true;
         }
 
-        $backupZipFile = $this->createZip($files);
+        $compress = config('db-manager.output.compress');
 
-        if (filesize($backupZipFile) == 0) {
-            $this->warn('The zipfile that will be backed up has a filesize of zero.');
+        if(!isset($compress) || (isset($compress) && !is_bool($compress))) {
+            $compress = true;
+        }
+
+        $this->info("Compress output files: " . ($compress ? "True" : "False"));
+
+        //Compress if needed
+        if($compress) {
+
+            $backupZipFile = $this->createZip($files);
+
+            if (filesize($backupZipFile) == 0) {
+                $this->warn('The zipfile that will be backed up has a filesize of zero.');
+            }
+
         }
 
         $keepLastOnly = config('db-manager.output.keeplastonly');
 
+        if(!isset($keepLastOnly) || (isset($keepLastOnly) && !is_bool($keepLastOnly))) {
+            $keepLastOnly = false;
+        }
+
+        $this->info("Kepp last output only: " . ($keepLastOnly ? "True" : "False"));
+
+        //Delete previous backups if needed
         if(!empty($keepLastOnly) && is_bool($keepLastOnly) && $keepLastOnly) {
             foreach ($this->getTargetFileSystems() as $fileSystem) {
                 $this->deletePreviousBackups($fileSystem);
             }
         }
 
+        //Copy all the files to your chosen location
         foreach ($this->getTargetFileSystems() as $fileSystem) {
-            $this->copyFileToFileSystem($backupZipFile, $fileSystem);
+            if($compress) {
+                $this->copyFileToFileSystem($backupZipFile, $fileSystem);
+            } else {
+                foreach($files as $file) {
+                    $this->copyFileToFileSystem($file['realFile'], $fileSystem);
+                }
+            }
         }
 
-        unlink($backupZipFile);
+        //Unlink the files
+        if($compress) {
+            unlink($backupZipFile);
+        } else {
+            foreach($files as $file) {
+                unlink($file['realFile']);
+            }
+        }
 
         $this->info('Backup successfully completed');
 
@@ -120,7 +154,7 @@ class BackupCommands extends Command
     protected function getBackupDestinationFileName()
     {
         $backupDirectory = config('db-manager.output.location');
-        $backupFilename = $this->getPrefix().$this->getFilename().$this->getSuffix().'.zip';
+        $backupFilename = $this->getPrefix().$this->getFilename().$this->getSuffix().FileHelper::getOutputFileType();
 
         return $backupDirectory.'/'.$backupFilename;
     }

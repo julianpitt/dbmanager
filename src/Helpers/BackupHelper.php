@@ -58,6 +58,7 @@ class BackupHelper
 
     public function getDatabase($connectionName = '')
     {
+
         $connectionName = $connectionName ?: config('database.default');
 
         $dbDriver = config("database.connections.{$connectionName}.driver");
@@ -98,6 +99,8 @@ class BackupHelper
             throw new Exception("Could not create backup of db\n" . $success);
 
         }
+
+        FileHelper::prependSignature($tempFile);
 
         return $tempFile;
     }

@@ -34,27 +34,27 @@ class MySQLDatabase implements DatabaseHandler
     {
         $tempFileHandle = tmpfile();
 
-        if($tempFileHandle === false) {
+        if ($tempFileHandle === false) {
             throw new Exception("Unable to make temporary file");
         }
 
         fwrite($tempFileHandle,
-            "[client]".PHP_EOL.
-            "user = '".$this->user."'".PHP_EOL.
-            "password = '".$this->password."'".PHP_EOL.
-            "host = '".$this->host."'".PHP_EOL.
-            "port = '".$this->port."'".PHP_EOL
+            "[client]" . PHP_EOL .
+            "user = '" . $this->user . "'" . PHP_EOL .
+            "password = '" . $this->password . "'" . PHP_EOL .
+            "host = '" . $this->host . "'" . PHP_EOL .
+            "port = '" . $this->port . "'" . PHP_EOL
         );
 
         $temporaryCredentialsFile = stream_get_meta_data($tempFileHandle)['uri'];
 
         $command = sprintf('%smysqldump --defaults-extra-file=%s --skip-comments ' .
             ($this->useExtendedInsert() ? '--extended-insert' : '--skip-extended-insert') .
-            ($this->useExtendedInsert() ? '--extended-insert' : '--skip-extended-insert') .
-            ' %s > %s %s',
+            ' %s %s > %s %s',
 
             $this->getDumpCommandPath(),
             escapeshellarg($temporaryCredentialsFile),
+            $this->dumpType(),
             escapeshellarg($this->database),
             escapeshellarg($destinationFile),
             escapeshellcmd($this->getSocketArgument())
@@ -68,29 +68,30 @@ class MySQLDatabase implements DatabaseHandler
 
         $tempFileHandle = tmpfile();
 
-        if($tempFileHandle === false) {
+        if ($tempFileHandle === false) {
             throw new Exception("Unable to make temporary file");
         }
 
         fwrite($tempFileHandle,
-            "[client]".PHP_EOL.
-            "user = '".$this->user."'".PHP_EOL.
-            "password = '".$this->password."'".PHP_EOL.
-            "host = '".$this->host."'".PHP_EOL.
-            "port = '".$this->port."'".PHP_EOL
+            "[client]" . PHP_EOL .
+            "user = '" . $this->user . "'" . PHP_EOL .
+            "password = '" . $this->password . "'" . PHP_EOL .
+            "host = '" . $this->host . "'" . PHP_EOL .
+            "port = '" . $this->port . "'" . PHP_EOL
         );
 
         $temporaryCredentialsFile = stream_get_meta_data($tempFileHandle)['uri'];
 
-        $command = sprintf('%smysqldump --defaults-extra-file=%s --skip-comments '.($this->useExtendedInsert() ? '--extended-insert' : '--skip-extended-insert').' %s \'%s\' > %s %s',
+        $command = sprintf('%smysqldump --defaults-extra-file=%s --skip-comments ' . ($this->useExtendedInsert() ? '--extended-insert' : '--skip-extended-insert') . ' %s %s "%s" > %s %s',
             $this->getDumpCommandPath(),
             escapeshellarg($temporaryCredentialsFile),
+            $this->dumpType(),
             escapeshellarg($this->database),
-            implode("' '", $tablesToBackUp),
+            implode("\" \"", $tablesToBackUp),
             escapeshellarg($destinationFile),
             escapeshellcmd($this->getSocketArgument())
         );
-
+        echo($command);
         return $this->console->run($command, config('db-manager.output.timeoutInSeconds'));
     }
 
@@ -102,11 +103,11 @@ class MySQLDatabase implements DatabaseHandler
         $tempFileHandle = tmpfile();
 
         fwrite($tempFileHandle,
-            "[client]".PHP_EOL.
-            "user = '".$this->user."'".PHP_EOL.
-            "password = '".$this->password."'".PHP_EOL.
-            "host = '".$this->host."'".PHP_EOL.
-            "port = '".$this->port."'".PHP_EOL
+            "[client]" . PHP_EOL .
+            "user = '" . $this->user . "'" . PHP_EOL .
+            "password = '" . $this->password . "'" . PHP_EOL .
+            "host = '" . $this->host . "'" . PHP_EOL .
+            "port = '" . $this->port . "'" . PHP_EOL
         );
         $temporaryCredentialsFile = stream_get_meta_data($tempFileHandle)['uri'];
         $command = sprintf('%mysql --defaults-extra-file=%s -B %s -e "%s"',
@@ -119,7 +120,7 @@ class MySQLDatabase implements DatabaseHandler
         return $this->console->run($command, config('db-manager.output.timeoutInSeconds'));
     }
 
-    public function getFileExtension()
+    public static function getFileExtension()
     {
         return 'sql';
     }
@@ -138,11 +139,11 @@ class MySQLDatabase implements DatabaseHandler
     {
         $type = config('db-manager.output.backupType');
 
-        if(empty($type)) {
+        if (empty($type)) {
             return "";
         }
 
-        if($type == "dataonly") {
+        if ($type == "dataonly") {
             return "--skip-triggers --compact --no-create-info";
         } else if ($type == "structureonly") {
             return "-d";
@@ -154,7 +155,7 @@ class MySQLDatabase implements DatabaseHandler
     protected function getSocketArgument()
     {
         if ($this->socket != '') {
-            return '--socket='.$this->socket;
+            return '--socket=' . $this->socket;
         }
 
         return '';
@@ -179,16 +180,17 @@ class MySQLDatabase implements DatabaseHandler
     public function checkBackupIntegrity($commandClass)
     {
         //Check the database exists
-        if(!$this->checkDatabase($this->database)) {
+        if (!$this->checkDatabase($this->database)) {
             throw new \Exception("Integrity check failed! No " . $this->database . " database found");
         }
 
         return $this->checkTablesForBackup($this->database, $commandClass);
     }
 
-    public function checkRestoreIntegrity($commandClass) {
+    public function checkRestoreIntegrity($commandClass)
+    {
         //Check the database exists
-        if(!$this->checkDatabase($this->database)) {
+        if (!$this->checkDatabase($this->database)) {
             throw new \Exception("Integrity check failed! No " . $this->database . " database found");
         }
 
@@ -197,8 +199,8 @@ class MySQLDatabase implements DatabaseHandler
 
     public function checkDatabase($database)
     {
-        foreach($this->queries->getDatabases() as $schema) {
-            if($database == $schema->Database)
+        foreach ($this->queries->getDatabases() as $schema) {
+            if ($database == $schema->Database)
                 return true;
         }
         return false;
@@ -212,8 +214,8 @@ class MySQLDatabase implements DatabaseHandler
 
         $index = 0;
 
-        foreach($tablesToBackUp as $table) {
-            if(isset($tablesInDatabase[$table])) {
+        foreach ($tablesToBackUp as $table) {
+            if (isset($tablesInDatabase[$table])) {
                 $foundTables[] = $table;
                 unset($tablesToBackUp[$index]);
             }
@@ -226,27 +228,27 @@ class MySQLDatabase implements DatabaseHandler
         ];
     }
 
-    public function checkTablesForInsert( $database, $commandClass )
+    public function checkTablesForInsert($database, $commandClass)
     {
         $tables = $this->checkTables($database);
 
         return true;
     }
 
-    public function checkTablesForBackup( $database, $commandClass )
+    public function checkTablesForBackup($database, $commandClass)
     {
         $tables = $this->checkTables($database);
 
         $commandClass->info("The following tables were found: \n-" . implode("\n-", $tables["found"]));
 
-        if(count($tables["found"]) <= 0) {
+        if (count($tables["found"]) <= 0) {
             throw new \Exception("Integrity check failed! No tables to back up were found in the database");
         }
 
         //Check the tables exist
-        if(isset($tables["notfound"]) && count($tables["notfound"]) > 0) {
+        if (isset($tables["notfound"]) && count($tables["notfound"]) > 0) {
             $commandClass->info("\nThe following tables were not found:\n-" . implode("\n-", $tables["notfound"]));
-            if(!$commandClass->confirm("Would you like to back up the tables that have been found?")) {
+            if (!$commandClass->confirm("Would you like to back up the tables that have been found?")) {
                 throw new \Exception("Integrity check failed! Some tables were not found");
             }
         }
@@ -258,13 +260,13 @@ class MySQLDatabase implements DatabaseHandler
     {
         $backupTables = config('db-manager.output.tables');
 
-        if(empty($backupTables)) {
-           return "all";
+        if (empty($backupTables)) {
+            return "all";
         }
 
         $tables = config('db-manager.tables.' . $backupTables);
 
-        if(empty($tables)) {
+        if (empty($tables)) {
             return "all";
         }
 
@@ -275,8 +277,8 @@ class MySQLDatabase implements DatabaseHandler
     {
         $returnArray = [];
 
-        foreach($objArr as $obj) {
-            if(isset($returnArray[$obj->TABLE_NAME])) {
+        foreach ($objArr as $obj) {
+            if (isset($returnArray[$obj->TABLE_NAME])) {
                 $returnArray[$obj->TABLE_NAME][] = $obj->COLUMN_NAME;
             } else {
                 $returnArray[$obj->TABLE_NAME] = [$obj->COLUMN_NAME];
@@ -289,8 +291,8 @@ class MySQLDatabase implements DatabaseHandler
     private function in2DArray($array, $key, $val)
     {
         $index = 0;
-        foreach($array as $item) {
-            if(isset($item[$key]) && $item[$key] == $val) {
+        foreach ($array as $item) {
+            if (isset($item[$key]) && $item[$key] == $val) {
                 return $index;
             }
             $index++;

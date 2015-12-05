@@ -9,6 +9,6 @@ interface DatabaseHandler
     public function dumpTables($destinationFile, $tables);
     public function checkBackupIntegrity($callIngClass);
     public function checkRestoreIntegrity($callIngClass);
-    public function getFileExtension();
+    public static function getFileExtension();
 
 }

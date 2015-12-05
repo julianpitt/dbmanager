@@ -17,9 +17,7 @@ return [
     |
     */
 
-    'mysqlloc'      => '/usr/bin/',
-
-    'mysqlbinloc'   => '/usr/bin/',
+    'mysqlbinloc'      => env('DBMAN_MYSQLBINLOC', "/var/lib/mysql/"),
 
 
     /*
@@ -39,14 +37,14 @@ return [
         'prefix'        => 'datetime',
         'suffix'        => '',
         'filename'      => '-db-manager',
-        'compress'      => false,
-        'keeplastonly'  => true,
-        'filesystem'    => 'local',
-        'location'      => "/backups",
-        'useExtendedInsert' => false,
+        'compress'      => env('DBMAN_OUTPUT_COMPRESS', true),
+        'keeplastonly'  => env('DBMAN_OUTPUT_KEEPLASTONLY', false),
+        'filesystem'    => env('DBMAN_OUTPUT_FILESYSTEM', "local"),
+        'location'      => env('DBMAN_OUTPUT_LOCATION', "/backups"),
+        'useExtendedInsert' => true,
         'timeoutInSeconds'  => 60,
-        'tables'        => 'laravel',
-        'backupType'    => 'structureonly'
+        'tables'        => env('DBMAN_OUTPUT_TABLES', "laravel"),
+        'backupType'    => env('DBMAN_OUTPUT_BACKUPTYPE', "dataandstructure"),
     ],
 
     'tables' => [
@@ -58,7 +56,6 @@ return [
             'users',
             'migrations',
             'password_resets',
-            'doesnt_exist'
         ]
     ]
 
