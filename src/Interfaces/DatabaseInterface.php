@@ -5,7 +5,8 @@ namespace JulianPitt\DBManager\Interfaces;
 interface DatabaseHandler
 {
 
-    public function dump($destinationFile);
+    public function dumpAll($destinationFile);
+    public function dumpTables($destinationFile, $tables);
     public function checkBackupIntegrity($callIngClass);
     public function checkRestoreIntegrity($callIngClass);
     public function getFileExtension();

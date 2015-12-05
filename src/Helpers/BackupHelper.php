@@ -71,14 +71,32 @@ class BackupHelper
 
     public function getDumpedDatabase($commandClass)
     {
+
         $tempFile = tempnam(sys_get_temp_dir(), "dbbackup");
 
-        $passedChecks = $this->getDatabase()->checkBackupIntegrity($commandClass);
+        //Determine if you are getting certain tables or all of the database
 
-        $success = $this->getDatabase()->dump($tempFile);
+        if(!empty(config("db-manager.output.tables"))) {
 
-        if ((!$success || !$passedChecks) || filesize($tempFile) == 0 ) {
-            throw new Exception('Could not create backup of db');
+            $passedChecks = $this->getDatabase()->checkBackupIntegrity($commandClass);
+
+        }
+
+        //This means there are specific tables to back up only
+        if(!empty($passedChecks)) {
+
+            $success = $this->getDatabase()->dumpTables($tempFile, $passedChecks);
+
+        } else {
+
+            $success = $this->getDatabase()->dumpAll($tempFile);
+
+        }
+
+        if ( !$success || filesize($tempFile) == 0 ) {
+
+            throw new Exception("Could not create backup of db\n" . $success);
+
         }
 
         return $tempFile;

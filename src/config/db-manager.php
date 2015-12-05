@@ -11,14 +11,15 @@ return [
     | Set the absolute path
     | windows MySQL 5.0 -> C:\Program Files\MySQL\(mysqlversion)\
     | linux -> /var/lib/mysql/
+    | linux -> /usr/bin/
     | windows xampp -> C:\xampp\mysql\bin\
     | windows wamp -> C:\wamp\bin\mysql\(mysqlversion)\bin\
     |
     */
 
-    'mysqlloc'      => 'C:\xampp\mysql\bin\\',
+    'mysqlloc'      => '/usr/bin/',
 
-    'mysqlbinloc'   => 'C:\xampp\mysql\bin\\',
+    'mysqlbinloc'   => '/usr/bin/',
 
 
     /*
@@ -27,9 +28,11 @@ return [
     |--------------------------------------------------------------------------
     |
     | Set the output file settings for prefix, suffix. can use 'datetime' to add the current datetime
-    | Location starts from Storage/app/
+    | Location is specified in the location config
     | Compress uses zip compression
     | datetime appends the datetime to the filename
+    | Specify which tables to back up in the tables array or leave blank for full database backup
+    | backupType can be dataonly|structureonly|dataandstructure
     |
     */
     'output' => [
@@ -43,6 +46,7 @@ return [
         'useExtendedInsert' => false,
         'timeoutInSeconds'  => 60,
         'tables'        => 'laravel',
+        'backupType'    => 'structureonly'
     ],
 
     'tables' => [

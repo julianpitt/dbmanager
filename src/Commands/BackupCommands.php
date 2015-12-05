@@ -16,7 +16,7 @@ class BackupCommands extends Command
     {
         $this->info('Start backing up');
 
-        $files = $this->getAllFilesToBeBackedUp();
+        $files = $this->getAllTablesToBeBackedUp();
 
         if (count($files) == 0) {
             $this->info('Nothing to backup');
@@ -49,7 +49,7 @@ class BackupCommands extends Command
         return true;
     }
 
-    protected function getAllFilesToBeBackedUp()
+    protected function getAllTablesToBeBackedUp()
     {
         $files = [];
 
@@ -199,7 +199,7 @@ class BackupCommands extends Command
 
         $this->comment('Database dumped');
 
-        return $databaseBackupHandler->getFilesToBeBackedUp()[0];
+        return $filesToBeBackedUp[0];
     }
 
     public function deletePreviousBackups($fileSystem)

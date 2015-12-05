@@ -4,6 +4,7 @@ use JulianPitt\DBManager\Console;
 use Config;
 use JulianPitt\DBManager\Databases\MySQL\MySqlQueries;
 use JulianPitt\DBManager\Interfaces\DatabaseHandler;
+use Mockery\CountValidator\Exception;
 
 class MySQLDatabase implements DatabaseHandler
 {
@@ -29,12 +30,14 @@ class MySQLDatabase implements DatabaseHandler
         $this->queries = new MySqlQueries();
     }
 
-    public function dump($destinationFile)
+    public function dumpAll($destinationFile)
     {
-        /*
-         * Create temporary file with db credentials
-         */
         $tempFileHandle = tmpfile();
+
+        if($tempFileHandle === false) {
+            throw new Exception("Unable to make temporary file");
+        }
+
         fwrite($tempFileHandle,
             "[client]".PHP_EOL.
             "user = '".$this->user."'".PHP_EOL.
@@ -42,12 +45,48 @@ class MySQLDatabase implements DatabaseHandler
             "host = '".$this->host."'".PHP_EOL.
             "port = '".$this->port."'".PHP_EOL
         );
+
         $temporaryCredentialsFile = stream_get_meta_data($tempFileHandle)['uri'];
 
-        $command = sprintf('%smysqldump --defaults-extra-file=%s --skip-comments '.($this->useExtendedInsert() ? '--extended-insert' : '--skip-extended-insert').' %s > %s %s',
+        $command = sprintf('%smysqldump --defaults-extra-file=%s --skip-comments ' .
+            ($this->useExtendedInsert() ? '--extended-insert' : '--skip-extended-insert') .
+            ($this->useExtendedInsert() ? '--extended-insert' : '--skip-extended-insert') .
+            ' %s > %s %s',
+
             $this->getDumpCommandPath(),
             escapeshellarg($temporaryCredentialsFile),
             escapeshellarg($this->database),
+            escapeshellarg($destinationFile),
+            escapeshellcmd($this->getSocketArgument())
+        );
+
+        return $this->console->run($command, config('db-manager.output.timeoutInSeconds'));
+    }
+
+    public function dumpTables($destinationFile, $tablesToBackUp)
+    {
+
+        $tempFileHandle = tmpfile();
+
+        if($tempFileHandle === false) {
+            throw new Exception("Unable to make temporary file");
+        }
+
+        fwrite($tempFileHandle,
+            "[client]".PHP_EOL.
+            "user = '".$this->user."'".PHP_EOL.
+            "password = '".$this->password."'".PHP_EOL.
+            "host = '".$this->host."'".PHP_EOL.
+            "port = '".$this->port."'".PHP_EOL
+        );
+
+        $temporaryCredentialsFile = stream_get_meta_data($tempFileHandle)['uri'];
+
+        $command = sprintf('%smysqldump --defaults-extra-file=%s --skip-comments '.($this->useExtendedInsert() ? '--extended-insert' : '--skip-extended-insert').' %s \'%s\' > %s %s',
+            $this->getDumpCommandPath(),
+            escapeshellarg($temporaryCredentialsFile),
+            escapeshellarg($this->database),
+            implode("' '", $tablesToBackUp),
             escapeshellarg($destinationFile),
             escapeshellcmd($this->getSocketArgument())
         );
@@ -93,6 +132,23 @@ class MySQLDatabase implements DatabaseHandler
     protected function useExtendedInsert()
     {
         return config('db-manager.output.useExtendedInsert');
+    }
+
+    protected function dumpType()
+    {
+        $type = config('db-manager.output.backupType');
+
+        if(empty($type)) {
+            return "";
+        }
+
+        if($type == "dataonly") {
+            return "--skip-triggers --compact --no-create-info";
+        } else if ($type == "structureonly") {
+            return "-d";
+        }
+
+        return "";
     }
 
     protected function getSocketArgument()
@@ -195,7 +251,7 @@ class MySQLDatabase implements DatabaseHandler
             }
         }
 
-        return true;
+        return $tables["found"];
     }
 
     public function getTablesToBackUp()
