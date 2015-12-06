@@ -15,7 +15,7 @@ class BackupCommands extends Command
 
     public function fire()
     {
-        $this->info('Start backing up');
+        $this->info('Starting backup');
 
         $files = $this->getAllTablesToBeBackedUp();
 
@@ -215,9 +215,12 @@ class BackupCommands extends Command
     protected function getOptions()
     {
         return [
-            ['prefix', null, InputOption::VALUE_REQUIRED, 'The name of the zip file will get prefixed with this string.'],
-            ['suffix', null, InputOption::VALUE_REQUIRED, 'The name of the zip file will get suffixed with this string.'],
-            ['full', null, InputOption::VALUE_REQUIRED, 'The SQL command will generate the full export'],
+            ['prefix', null, InputOption::VALUE_REQUIRED, 'The name of the file will get prefixed with this string.'],
+            ['suffix', null, InputOption::VALUE_REQUIRED, 'The name of the file will get suffixed with this string.'],
+            ['filename', null, InputOption::VALUE_REQUIRED, 'The name of the file to output.'],
+            ['type', null, InputOption::VALUE_REQUIRED, 'The type of dump to perform on the database ("datanadstructure/dataonly/structureonly)'],
+            ['keeplastonly', null, InputOption::VALUE_REQUIRED, 'Keep the last backup or delete all previous backups (true/false)'],
+            ['compress', null, InputOption::VALUE_REQUIRED, 'Compress the output file to .zip (true/false)'],
         ];
     }
 

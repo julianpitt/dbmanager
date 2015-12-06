@@ -14,13 +14,18 @@ class RestoreCommands extends Command
 
     public function fire()
     {
-        $this->info('Start Restore');
+        $this->info('Starting Restore');
 
-        $this->info('App Path' . base_path());
+        $this->restoreLastBackup();
 
         $this->info('Restore successfully completed');
 
         return true;
+    }
+
+    protected function restoreLastBackup()
+    {
+
     }
 
     protected function getAllFilesToBeBackedUp()
@@ -30,41 +35,6 @@ class RestoreCommands extends Command
         $files[] = ['realFile' => $this->getDatabaseDump($files), 'fileInZip' => 'dump.sql'];
 
         return $files;
-    }
-
-    protected function createZip($files)
-    {
-        $this->comment('Start zipping '.count($files).' files...');
-
-        $tempZipFile = tempnam(sys_get_temp_dir(), "db-manager-backup");
-
-        $zip = new ZipArchive();
-        $zip->open($tempZipFile, ZipArchive::CREATE);
-
-        foreach ($files as $file) {
-            if (file_exists($file['realFile'])) {
-                $zip->addFile($file['realFile'], $file['fileInZip']);
-            }
-        }
-
-        $zip->close();
-
-        $this->comment('Zip created!');
-
-        return $tempZipFile;
-    }
-
-    protected function copyFile($file, $disk, $destination)
-    {
-        $destinationDirectory = dirname($destination);
-
-        $disk->makeDirectory($destinationDirectory);
-
-        /*
-         * The file could be quite large. Use a stream to copy it
-         * to the target disk to avoid memory problems
-         */
-        $disk->getDriver()->writeStream($destination, fopen($file, 'r+'));
     }
 
     protected function getTargetFileSystems()
@@ -117,40 +87,11 @@ class RestoreCommands extends Command
         return config('db-manager.output.suffix');
     }
 
-    public function copyFileToFileSystem($file, $fileSystem)
-    {
-        $this->comment('Start uploading backup to '.$fileSystem.'-filesystem...');
-
-        $disk = Storage::disk($fileSystem);
-
-        $backupFilename = $this->getBackupDestinationFileName();
-
-        $this->copyFile($file, $disk, $backupFilename, $fileSystem == 'local');
-
-        $this->comment('Backup stored on '.$fileSystem.'-filesystem in file "'.$backupFilename.'"');
-    }
-
     protected function getOptions()
     {
         return [
-            ['prefix', null, InputOption::VALUE_REQUIRED, 'The name of the zip file will get prefixed with this string.'],
-            ['suffix', null, InputOption::VALUE_REQUIRED, 'The name of the zip file will get suffixed with this string.'],
+            ['name', null, InputOption::VALUE_REQUIRED, 'The name of the backup file to restore into the database.'],
         ];
-    }
-
-    protected function getDatabaseDump()
-    {
-        $databaseBackupHandler = app()->make('JulianPitt\DBManager\Helpers\BackupHelper');
-
-        $filesToBeBackedUp = $databaseBackupHandler->getFilesToBeBackedUp();
-
-        if (count($filesToBeBackedUp) != 1) {
-            throw new \Exception('could not backup db');
-        }
-
-        $this->comment('Database dumped');
-
-        return $databaseBackupHandler->getFilesToBeBackedUp()[0];
     }
 
 }

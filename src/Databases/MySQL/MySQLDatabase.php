@@ -30,6 +30,12 @@ class MySQLDatabase implements DatabaseHandler
         $this->queries = new MySqlQueries();
     }
 
+    /**
+     * Performs the database dump for a specific schema on all of it's tables, then saves it to an output file
+     *
+     * @param $destinationFile
+     * @return bool|string
+     */
     public function dumpAll($destinationFile)
     {
         $tempFileHandle = tmpfile();
@@ -63,6 +69,14 @@ class MySQLDatabase implements DatabaseHandler
         return $this->console->run($command, config('db-manager.output.timeoutInSeconds'));
     }
 
+    /**
+     * Performs an export on a specified set of tables on the specified database from the config and
+     * saves the result to a file
+     *
+     * @param $destinationFile
+     * @param $tablesToBackUp
+     * @return bool|string
+     */
     public function dumpTables($destinationFile, $tablesToBackUp)
     {
 
@@ -120,6 +134,11 @@ class MySQLDatabase implements DatabaseHandler
         return $this->console->run($command, config('db-manager.output.timeoutInSeconds'));
     }
 
+    /**
+     * Gets the file extension of the output file for the database dump
+     *
+     * @return string
+     */
     public static function getFileExtension()
     {
         return 'sql';
@@ -135,6 +154,12 @@ class MySQLDatabase implements DatabaseHandler
         return config('db-manager.output.useExtendedInsert');
     }
 
+    /**
+     * Gets the command for the type of dump specified from the config, can be dataonly,
+     * structure only or both
+     *
+     * @return string
+     */
     protected function dumpType()
     {
         $type = config('db-manager.output.backupType');
@@ -152,6 +177,11 @@ class MySQLDatabase implements DatabaseHandler
         return "";
     }
 
+    /**
+     * Gets the socket arguement for the mysql queries
+     *
+     * @return string
+     */
     protected function getSocketArgument()
     {
         if ($this->socket != '') {
@@ -197,6 +227,13 @@ class MySQLDatabase implements DatabaseHandler
         return $this->checkTablesForInsert($this->database, $commandClass);
     }
 
+    /**
+     * Checks to see if the database that you would like to back up currently exists in a list of
+     * existing schemas
+     *
+     * @param $database
+     * @return bool
+     */
     public function checkDatabase($database)
     {
         foreach ($this->queries->getDatabases() as $schema) {
@@ -206,6 +243,13 @@ class MySQLDatabase implements DatabaseHandler
         return false;
     }
 
+    /**
+     * Checks the schema and tables in the schema of the table you would like to back up
+     * to make sure everything runs smoothly
+     *
+     * @param $database
+     * @return array
+     */
     public function checkTables($database)
     {
         $tablesToBackUp = $this->getTablesToBackUp();
@@ -232,9 +276,25 @@ class MySQLDatabase implements DatabaseHandler
     {
         $tables = $this->checkTables($database);
 
+        $commandClass->info("The following tables were found: \n-" . implode("\n-", $tables["found"]));
+
+        if (count($tables["found"]) <= 0) {
+            throw new \Exception("Integrity check failed! No tables to back up were found in the database");
+        }
+
         return true;
     }
 
+    /**
+     * Checks that there are tables in the selected database and displays if there are any tables that
+     * are not found from the supplied tables list in th config.
+     * returns an array of found tables
+     *
+     * @param $database
+     * @param $commandClass
+     * @return mixed
+     * @throws \Exception
+     */
     public function checkTablesForBackup($database, $commandClass)
     {
         $tables = $this->checkTables($database);
@@ -256,6 +316,11 @@ class MySQLDatabase implements DatabaseHandler
         return $tables["found"];
     }
 
+    /**
+     * Gets a list of tables to back up from the config
+     *
+     * @return Config|string
+     */
     public function getTablesToBackUp()
     {
         $backupTables = config('db-manager.output.tables');
@@ -273,6 +338,13 @@ class MySQLDatabase implements DatabaseHandler
         return $tables;
     }
 
+    /**
+     * A helper method that converts an array of objects from the MySQL infoschema table into an
+     * associative array
+     *
+     * @param $objArr
+     * @return array
+     */
     private function convertObjArr($objArr)
     {
         $returnArray = [];
