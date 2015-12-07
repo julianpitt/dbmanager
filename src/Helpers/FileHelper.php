@@ -70,4 +70,9 @@ EOT;
         rename($tmpname, $filename);
     }
 
+    public function getLatestFile()
+    {
+
+    }
+
 }

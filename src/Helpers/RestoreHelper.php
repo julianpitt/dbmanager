@@ -5,7 +5,7 @@ use JulianPitt\DBManager\Console;
 use Config;
 use Exception;
 
-class BackupHelper
+class RestoreHelper
 {
     protected $console;
     protected $database;
@@ -68,46 +68,6 @@ class BackupHelper
         }
 
         return $this->getDatabaseConnection(config("database.connections.{$connectionName}"));
-    }
-
-    public function getDumpedDatabase($commandClass)
-    {
-
-        $tempFile = tempnam(sys_get_temp_dir(), "dbbackup");
-
-        //Determine if you are getting certain tables or all of the database
-
-        if(!empty(config("db-manager.output.tables"))) {
-
-            $passedChecks = $this->getDatabase()->checkBackupIntegrity($commandClass);
-
-        }
-
-        //This means there are specific tables to back up only
-        if(!empty($passedChecks)) {
-
-            $success = $this->getDatabase()->dumpTables($tempFile, $passedChecks);
-
-        } else {
-
-            $success = $this->getDatabase()->dumpAll($tempFile);
-
-        }
-
-        if ( !$success || filesize($tempFile) == 0 ) {
-
-            throw new Exception("Could not create backup of db\n" . $success);
-
-        }
-
-        FileHelper::prependSignature($tempFile);
-
-        return $tempFile;
-    }
-
-    public function getFilesToBeBackedUp($commandClass)
-    {
-        return [$this->getDumpedDatabase($commandClass)];
     }
 
     public function getFileToRestore($commandClass, $fileSystem)

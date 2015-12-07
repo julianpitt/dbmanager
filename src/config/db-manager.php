@@ -57,6 +57,12 @@ return [
             'migrations',
             'password_resets',
         ]
+    ],
+
+    'input' => [
+        'sameAsOutput'  => env('DBMAN_INPUT_SAMEASOUTPUT', true),
+        'filesystem'    => env('DBMAN_INPUT_FILESYSTEM', "local"),
+        'location'      => env('DBMAN_INPUT_LOCATION', "/backups"),
     ]
 
 ];

@@ -2,6 +2,7 @@
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use JulianPitt\DBManager\Helpers\FileHelper;
 use Symfony\Component\Console\Input\InputOption;
 use ZipArchive;
 
@@ -16,36 +17,45 @@ class RestoreCommands extends Command
     {
         $this->info('Starting Restore');
 
-        $this->restoreLastBackup();
+        $this->restoreLastBackup($this->getTargetFileSystem());
 
         $this->info('Restore successfully completed');
 
         return true;
     }
 
-    protected function restoreLastBackup()
+    protected function restoreLastBackup($fileSystem)
     {
+        $databaseRestoreHandler = app()->make('JulianPitt\DBManager\Helpers\RestoreHelper');
 
-    }
+        $fileToRestore = $databaseRestoreHandler->getFileToRestore($this, $fileSystem);
 
-    protected function getAllFilesToBeBackedUp()
-    {
-        $files = [];
-
-        $files[] = ['realFile' => $this->getDatabaseDump($files), 'fileInZip' => 'dump.sql'];
-
-        return $files;
-    }
-
-    protected function getTargetFileSystems()
-    {
-        $fileSystems = config('db-manager.output.filesystem');
-
-        if (is_array($fileSystems)) {
-            return $fileSystems;
+        if(count($fileToRestore) < 1) {
+            throw new \Exception('Could not restore db');
         }
 
-        return [$fileSystems];
+        $this->comment('Database restored');
+    }
+
+    protected function getTargetFileSystem()
+    {
+        $sameAsOutput = config('db-manager.input.sameAsOutput');
+
+        if( !isset($sameAsOutput) || (isset($sameAsOutput) && !is_bool($sameAsOutput))) {
+            $sameAsOutput = true;
+        }
+
+        $fileSystem = config('db-manager.output.filesystem');
+
+        if(!$sameAsOutput) {
+            $fileSystem = config('db-manager.input.filesystem');
+        }
+
+        if (is_array($fileSystem)) {
+            throw new \Exception("Can only load from one database source");
+        }
+
+        return [$fileSystem];
     }
 
     protected function getBackupDestinationFileName()
