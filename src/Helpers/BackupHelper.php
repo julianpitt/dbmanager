@@ -9,12 +9,22 @@ class BackupHelper
 {
     protected $console;
     protected $database;
+    protected $fileHelper;
 
     public function __construct()
     {
         $this->console = new Console();
+        $this->fileHelper = new FileHelper();
     }
 
+    /**
+     *
+     * Create a new database connection from the config
+     *
+     * @param array $realConfig
+     * @return mixed
+     * @throws Exception
+     */
     public function getDatabaseConnection(array $realConfig)
     {
         try {
@@ -26,6 +36,12 @@ class BackupHelper
         return $this->database;
     }
 
+    /**
+     * Returns a new MySQLDatabase object from config settings
+     *
+     * @param array $config
+     * @throws Exception
+     */
     protected function buildMySQL(array $config)
     {
         $port = isset($config['port']) ? $config['port'] : 3306;
@@ -43,6 +59,13 @@ class BackupHelper
         );
     }
 
+    /**
+     * Returns the database host by reading the config
+     *
+     * @param array $config
+     * @return mixed
+     * @throws Exception
+     */
     public function determineHost(array $config)
     {
         if (isset($config['host'])) {
@@ -56,6 +79,13 @@ class BackupHelper
         throw new \Exception('could not determine host from config');
     }
 
+    /**
+     * Get the database that the application is using and return it's connection class
+     *
+     * @param string $connectionName
+     * @return mixed
+     * @throws Exception
+     */
     public function getDatabase($connectionName = '')
     {
 
@@ -94,13 +124,15 @@ class BackupHelper
 
         }
 
+        //Check if the backup was successful
         if ( !$success || filesize($tempFile) == 0 ) {
 
             throw new Exception("Could not create backup of db\n" . $success);
 
         }
 
-        FileHelper::prependSignature($tempFile);
+        //Write the signature
+        $this->fileHelper->prependSignature($tempFile);
 
         return $tempFile;
     }
@@ -118,12 +150,19 @@ class BackupHelper
     public function getLastBackup($commandClass)
     {
         $passedChecks = $this->getDatabase()->checkRestoreIntegrity($commandClass);
-
+        if($passedChecks) {
+            $this->fileHelper->getLatestFile();
+        }
     }
 
     public function getFileExtension()
     {
         return 'sql';
+    }
+
+    public function checkIfUserHasPermissions()
+    {
+
     }
 
 

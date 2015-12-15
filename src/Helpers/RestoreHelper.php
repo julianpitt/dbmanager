@@ -77,8 +77,19 @@ class RestoreHelper
 
     public function getLastBackup($commandClass)
     {
+        //Get the last back up from the file handler
+
+        //Perform backup checks on the last backup
+
         $passedChecks = $this->getDatabase()->checkRestoreIntegrity($commandClass);
 
+        if(!$passedChecks) {
+            throw new Exception('Restore checks failed');
+        }
+
+        //Restore the database
+
+        //return $backupFile;
     }
 
     public function getFileExtension()

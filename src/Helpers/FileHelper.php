@@ -6,7 +6,7 @@ use JulianPitt\DBManager\Databases\MySQLDatabase;
 class FileHelper
 {
 
-    public static function getOutputFileType()
+    public function getOutputFileType()
     {
 
         $compress = config('db-manager.output.compress');
@@ -19,7 +19,7 @@ class FileHelper
 
     }
 
-    public static function prependSignature($filename)
+    public function prependSignature($filename)
     {
         //Get Current Date
         $now = Carbon::now();
@@ -47,10 +47,14 @@ class FileHelper
         $tablesBackedUp = config("db-manager.tables.".$tablesBackedUp);
         $tablesBackedUp = implode(", ", $tablesBackedUp);
 
+        //Get Signature code
+        $code = $this->getSignatureCode($type, $databaseBackedUp);
+
         $string = <<<EOT
 /*
+CODE($code)
 
-Backup created with JulianPitt DBManager
+Backup created with JulianPitt DBManager, please do not modify signature
 
 Created on: $now
 Backup type: $backupType
@@ -73,6 +77,30 @@ EOT;
     public function getLatestFile()
     {
 
+    }
+
+    /**
+     * Generates a 3 part resotre code to help this package identify the backup type
+     *
+     * @return string
+     */
+    public function getSignatureCode($type, $database)
+    {
+        $code = "";
+        $separator = "|";
+
+        if ($type == "dataonly") {
+            $code = "data";
+        } else if ($type == "structureonly") {
+            $code = "structure";
+        } else {
+            $code = "both";
+        }
+
+        $code.=$separator.$database;
+
+
+        return $code;
     }
 
 }
