@@ -142,24 +142,7 @@ class BackupHelper
         return [$this->getDumpedDatabase($commandClass)];
     }
 
-    public function getFileToRestore($commandClass, $fileSystem)
-    {
-        return [$this->getLastBackup($commandClass)];
-    }
-
-    public function getLastBackup($commandClass)
-    {
-        $passedChecks = $this->getDatabase()->checkRestoreIntegrity($commandClass);
-        if($passedChecks) {
-            $this->fileHelper->getLatestFile();
-        }
-    }
-
-    public function getFileExtension()
-    {
-        return 'sql';
-    }
-
+    /*TODO*/
     public function checkIfUserHasPermissions()
     {
 

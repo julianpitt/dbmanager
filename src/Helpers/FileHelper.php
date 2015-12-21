@@ -74,7 +74,7 @@ EOT;
         rename($tmpname, $filename);
     }
 
-    public function getLatestFile()
+    public function getLatestFile($fileHandler, $directory)
     {
 
     }

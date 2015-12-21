@@ -1,5 +1,7 @@
 <?php namespace JulianPitt\DBManager\Helpers;
 
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 use JulianPitt\DBManager\Databases\MySQLDatabase;
 use JulianPitt\DBManager\Console;
 use Config;
@@ -72,14 +74,61 @@ class RestoreHelper
 
     public function getFileToRestore($commandClass, $fileSystem)
     {
-        return [$this->getLastBackup($commandClass)];
+        return [$this->getLastBackup($commandClass, $fileSystem)];
     }
 
-    public function getLastBackup($commandClass)
+    /*TODO*/
+    public function getLastBackup($commandClass, $fileSystem)
     {
         //Get the last back up from the file handler
+        $disk = Storage::disk($fileSystem[0]);
+
+        $backupDirectory = config('db-manager.output.location') . "/";
+
+        $allFiles = $disk->files($backupDirectory);
+
+        $latest = 0;
+        $latestFile = "";
+
+        $latest10 = [];
+
+        foreach($allFiles as $backupFile) {
+
+            if(count($latest10) < 10) {
+                //Fill the array if there are less than 10 backup files
+                array_push($latest10, [
+                    'name'=>$backupFile,
+                    'lastModified'=>$disk->lastModified($backupFile)
+                ]);
+            } else {
+                //There are more than 10 backup files, check each to make sure the oldest is changed
+
+            }
+
+            if ($latest < $disk->lastModified($backupFile)) {
+
+                $latestFile = $backupFile;
+
+            }
+
+        }
+
+        $commandClass->info("Please select the backup you wish to restore");
+
+        usort($latest10, function($a, $b) {
+            return $b['lastModified'] - $a['lastModified'];
+        });
+
+        foreach($latest10 as $key => $backup) {
+
+            $commandClass->info("[" . $key . "] Backup Name: " . $backup["name"] . " Last Modified: " . Carbon::createFromTimestamp($backup["lastModified"])->format("Y-m-d H:i:s"));
+
+        }
+
+        throw new Exception("done");
 
         //Perform backup checks on the last backup
+
 
         $passedChecks = $this->getDatabase()->checkRestoreIntegrity($commandClass);
 

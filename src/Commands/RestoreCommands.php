@@ -13,8 +13,12 @@ class RestoreCommands extends Command
 
     protected $description = 'Restore the last backup';
 
+    protected $fileHelper = null;
+
     public function fire()
     {
+        $this->fileHelper = new FileHelper();
+
         $this->info('Starting Restore');
 
         $this->restoreLastBackup($this->getTargetFileSystem());

@@ -3,6 +3,7 @@
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use JulianPitt\DBManager\Helpers\FileHelper;
+use PhpParser\Node\Scalar\MagicConst\File;
 use Symfony\Component\Console\Input\InputOption;
 use ZipArchive;
 
@@ -13,10 +14,15 @@ class BackupCommands extends Command
 
     protected $description = 'Run the backup';
 
+    protected $fileHelper = null;
+
     public function fire()
     {
+        $this->fileHelper = new FileHelper();
+
         $this->info('Starting backup');
 
+        //Get all the tables that need to be backed up into their file names form the dump
         $files = $this->getAllTablesToBeBackedUp();
 
         if (count($files) <= 0) {
@@ -24,6 +30,7 @@ class BackupCommands extends Command
             return true;
         }
 
+        //Compress the resulting file if needed
         $compress = config('db-manager.output.compress');
 
         if(!isset($compress) || (isset($compress) && !is_bool($compress))) {
@@ -32,7 +39,6 @@ class BackupCommands extends Command
 
         $this->info("Compress output files: " . ($compress ? "True" : "False"));
 
-        //Compress if needed
         if($compress) {
 
             $backupZipFile = $this->createZip($files);
@@ -43,6 +49,7 @@ class BackupCommands extends Command
 
         }
 
+        //Delete previous backups if needed
         $keepLastOnly = config('db-manager.output.keeplastonly');
 
         if(!isset($keepLastOnly) || (isset($keepLastOnly) && !is_bool($keepLastOnly))) {
@@ -51,7 +58,6 @@ class BackupCommands extends Command
 
         $this->info("Kepp last output only: " . ($keepLastOnly ? "True" : "False"));
 
-        //Delete previous backups if needed
         if(!empty($keepLastOnly) && is_bool($keepLastOnly) && $keepLastOnly) {
             foreach ($this->getTargetFileSystems() as $fileSystem) {
                 $this->deletePreviousBackups($fileSystem);
@@ -83,6 +89,12 @@ class BackupCommands extends Command
         return true;
     }
 
+    /**
+     * Provides a list of all the database tables to be backed up
+     *
+     * @return array
+     * @throws \Exception
+     */
     protected function getAllTablesToBeBackedUp()
     {
         $files = [];
@@ -92,6 +104,12 @@ class BackupCommands extends Command
         return $files;
     }
 
+    /**
+     * Creates a zip archive from the file supplied
+     *
+     * @param $files
+     * @return string
+     */
     protected function createZip($files)
     {
         $this->comment('Start zipping '.count($files).' files...');
@@ -140,6 +158,11 @@ class BackupCommands extends Command
         return $files;
     }
 
+    /**
+     * Get the filesystem in use from the config
+     *
+     * @return array|mixed
+     */
     protected function getTargetFileSystems()
     {
         $fileSystems = config('db-manager.output.filesystem');
@@ -151,14 +174,25 @@ class BackupCommands extends Command
         return [$fileSystems];
     }
 
+    /**
+     * Get the backup location destination full path
+     *
+     * @return string
+     * @throws \Exception
+     */
     protected function getBackupDestinationFileName()
     {
         $backupDirectory = config('db-manager.output.location');
-        $backupFilename = $this->getPrefix().$this->getFilename().$this->getSuffix().FileHelper::getOutputFileType();
+        $backupFilename = $this->getPrefix().$this->getFilename().$this->getSuffix().$this->fileHelper->getOutputFileType();
 
         return $backupDirectory.'/'.$backupFilename;
     }
 
+    /**
+     * Get the prefix of the output filename from the config
+     *
+     * @return array|bool|string
+     */
     public function getPrefix()
     {
         if ($this->option('prefix') != '') {
@@ -170,6 +204,12 @@ class BackupCommands extends Command
         return $prefix;
     }
 
+    /**
+     * Get the filename from the config for the output file name
+     *
+     * @return mixed
+     * @throws \Exception
+     */
     public function getFilename()
     {
         if (empty(config('db-manager.output.filename'))) {
@@ -179,6 +219,12 @@ class BackupCommands extends Command
         return config('db-manager.output.filename');
     }
 
+    /**
+     * Get the suffix of the output file
+     *
+     * @return array|bool|string
+     *
+     */
     public function getSuffix()
     {
         if ($this->option('suffix') != '') {
@@ -190,6 +236,12 @@ class BackupCommands extends Command
         return $suffix;
     }
 
+    /**
+     * A method that returns a special variable for the file name supplied
+     *
+     * @param $fix
+     * @return bool|string
+     */
     public function getFixSpecialType($fix)
     {
         if($fix == 'datetime') {
@@ -199,6 +251,12 @@ class BackupCommands extends Command
         }
     }
 
+    /**
+     * Copy a supplied file to the filesystem passed through in the destination specified in the config
+     *
+     * @param $file
+     * @param $fileSystem
+     */
     public function copyFileToFileSystem($file, $fileSystem)
     {
         $this->comment('Start uploading backup to '.$fileSystem.'-filesystem...');
@@ -212,6 +270,11 @@ class BackupCommands extends Command
         $this->comment('Backup stored on '.$fileSystem.'-filesystem in file "'.$backupFilename.'"');
     }
 
+    /**
+     * Extra parameters that can be used to change certain settings of the database backup or restore
+     *
+     * @return array
+     */
     protected function getOptions()
     {
         return [
@@ -224,6 +287,12 @@ class BackupCommands extends Command
         ];
     }
 
+    /**
+     * Get the file from the database dump
+     *
+     * @return mixed
+     * @throws \Exception
+     */
     protected function getDatabaseDump()
     {
         $databaseBackupHandler = app()->make('JulianPitt\DBManager\Helpers\BackupHelper');
@@ -239,6 +308,12 @@ class BackupCommands extends Command
         return $filesToBeBackedUp[0];
     }
 
+    /**
+     * Delete all previous backups from the selected filesystem
+     *
+     * @param $fileSystem
+     * @return bool
+     */
     public function deletePreviousBackups($fileSystem)
     {
         do {
