@@ -219,6 +219,7 @@ class MySQLDatabase implements DatabaseHandler
 
     public function checkRestoreIntegrity($commandClass)
     {
+        return false;
         //Check the database exists
         if (!$this->checkDatabase($this->database)) {
             throw new \Exception("Integrity check failed! No " . $this->database . " database found");

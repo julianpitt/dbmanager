@@ -19,6 +19,11 @@ class FileHelper
 
     }
 
+    public function unzip()
+    {
+
+    }
+
     public function prependSignature($filename)
     {
         //Get Current Date
