@@ -1,5 +1,6 @@
 <?php namespace JulianPitt\DBManager\Helpers;
 
+use Illuminate\Support\Facades\Storage;
 use JulianPitt\DBManager\Databases\MySQLDatabase;
 use JulianPitt\DBManager\Console;
 use Config;
@@ -142,10 +143,42 @@ class BackupHelper
         return [$this->getDumpedDatabase($commandClass)];
     }
 
-    /*TODO*/
-    public function checkIfUserHasPermissions()
+    public function checkIfUserHasPermissions($fileSystem)
     {
+        $disk = Storage::disk($fileSystem);
 
+        $filepath = config('db-manager.output.location') . "/testingPermissions.txt";
+
+        $testString = "Testing to see if the user can write to the output directory";
+
+        try {
+
+            //open, write to and close a file
+            $file = fopen($filepath, "w");
+            fwrite($file, $testString);
+            fclose($file);
+        } catch (Exception $e) {
+            throw new \Exception("Unable to write to file, make sure you have the correct permissions" . $filepath);
+        }
+
+        try {
+            //open, read, and close the file
+            $file = fopen($filepath, "r");
+            $savedString = fgets($file);
+            fclose($file);
+            if(strcasecmp($savedString, $testString) != 0) {
+                throw new \Exception("Saved file does not have the expected message, make sure you have the correct permissions");
+            }
+            throw new \Exception("writing to " . $folder);
+            //delete the file
+            /*if(!unlink($filepath)) {
+                throw new \Exception("Unable to remove the temporary test file, make sure you have the correct permissions");
+            }*/
+
+        } catch (Exception $e) {
+            throw new \Exception("Unable to read file, make sure you have the correct permissions" . $filepath);
+        }
+        return true;
     }
 
 

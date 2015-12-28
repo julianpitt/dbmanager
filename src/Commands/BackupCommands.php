@@ -2,6 +2,7 @@
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use JulianPitt\DBManager\Helpers\BackupHelper;
 use JulianPitt\DBManager\Helpers\FileHelper;
 use PhpParser\Node\Scalar\MagicConst\File;
 use Symfony\Component\Console\Input\InputOption;
@@ -16,11 +17,20 @@ class BackupCommands extends Command
 
     protected $fileHelper = null;
 
+    protected $backupHelper = null;
+
     public function fire()
     {
         $this->fileHelper = new FileHelper();
 
+        $this->backupHelper = new BackupHelper();
+
         $this->info('Starting backup');
+
+        //Check if the user has access to read and write files
+        foreach ($this->getTargetFileSystems() as $fileSystem) {
+            $this->backupHelper->checkIfUserHasPermissions($fileSystem);
+        }
 
         //Get all the tables that need to be backed up into their file names form the dump
         $files = $this->getAllTablesToBeBackedUp();
@@ -265,6 +275,8 @@ class BackupCommands extends Command
 
         $backupFilename = $this->getBackupDestinationFileName();
 
+
+
         $this->copyFile($file, $disk, $backupFilename, $fileSystem == 'local');
 
         $this->comment('Backup stored on '.$fileSystem.'-filesystem in file "'.$backupFilename.'"');
@@ -295,9 +307,7 @@ class BackupCommands extends Command
      */
     protected function getDatabaseDump()
     {
-        $databaseBackupHandler = app()->make('JulianPitt\DBManager\Helpers\BackupHelper');
-
-        $filesToBeBackedUp = $databaseBackupHandler->getFilesToBeBackedUp($this);
+        $filesToBeBackedUp = $this->backupHelper->getFilesToBeBackedUp($this);
 
         if (count($filesToBeBackedUp) != 1) {
             throw new \Exception('could not backup db');
