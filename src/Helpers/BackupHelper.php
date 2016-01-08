@@ -6,16 +6,14 @@ use JulianPitt\DBManager\Console;
 use Config;
 use Exception;
 
-class BackupHelper
+class BackupHelper extends FileHelper
 {
     protected $console;
     protected $database;
-    protected $fileHelper;
 
     public function __construct()
     {
         $this->console = new Console();
-        $this->fileHelper = new FileHelper();
     }
 
     /**
@@ -143,6 +141,7 @@ class BackupHelper
         return [$this->getDumpedDatabase($commandClass)];
     }
 
+    //TODO make it take in the filesystem and write to that
     public function checkIfUserHasPermissions($fileSystem)
     {
         $disk = Storage::disk($fileSystem);
@@ -151,29 +150,29 @@ class BackupHelper
 
         $testString = "Testing to see if the user can write to the output directory";
 
+        //open, write to and close a file
         try {
-
-            //open, write to and close a file
             $file = fopen($filepath, "w");
             fwrite($file, $testString);
             fclose($file);
         } catch (Exception $e) {
-            throw new \Exception("Unable to write to file, make sure you have the correct permissions" . $filepath);
+            throw new \Exception("Unable to write to file, make sure you have the correct permissions.\n Tried writing to" .
+                $filepath);
         }
 
+        //open, read, and close the file
         try {
-            //open, read, and close the file
             $file = fopen($filepath, "r");
             $savedString = fgets($file);
             fclose($file);
             if(strcasecmp($savedString, $testString) != 0) {
                 throw new \Exception("Saved file does not have the expected message, make sure you have the correct permissions");
             }
-            throw new \Exception("writing to " . $folder);
+
             //delete the file
-            /*if(!unlink($filepath)) {
+            if(!unlink($filepath)) {
                 throw new \Exception("Unable to remove the temporary test file, make sure you have the correct permissions");
-            }*/
+            }
 
         } catch (Exception $e) {
             throw new \Exception("Unable to read file, make sure you have the correct permissions" . $filepath);

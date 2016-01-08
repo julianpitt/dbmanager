@@ -1,12 +1,13 @@
 <?php namespace JulianPitt\DBManager\Helpers;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 use JulianPitt\DBManager\Databases\MySQLDatabase;
 
 class FileHelper
 {
 
-    public function getOutputFileType()
+    protected function getOutputFileType()
     {
 
         $compress = config('db-manager.output.compress');
@@ -19,12 +20,12 @@ class FileHelper
 
     }
 
-    public function unzip()
+    protected function unzip()
     {
 
     }
 
-    public function prependSignature($filename)
+    protected function prependSignature($filename)
     {
         //Get Current Date
         $now = Carbon::now();
@@ -79,7 +80,7 @@ EOT;
         rename($tmpname, $filename);
     }
 
-    public function getLatestFile($fileHandler, $directory)
+    protected function getLatestFile($fileHandler, $directory)
     {
 
     }
@@ -89,7 +90,7 @@ EOT;
      *
      * @return string
      */
-    public function getSignatureCode($type, $database)
+    protected function getSignatureCode($type, $database)
     {
         $code = "";
         $separator = "|";
@@ -106,6 +107,37 @@ EOT;
 
 
         return $code;
+    }
+
+    protected function copyFile($file, $disk, $destination)
+    {
+        $destinationDirectory = dirname($destination);
+
+        $disk->makeDirectory($destinationDirectory);
+
+        /*
+         * The file could be quite large. Use a stream to copy it
+         * to the target disk to avoid memory problems
+         */
+        $disk->getDriver()->writeStream($destination, fopen($file, 'r+'));
+    }
+
+    protected function deleteTargetDirectoryFiles($fileSystem)
+    {
+        $disk = Storage::disk($fileSystem);
+
+        $destination = config('db-manager.output.location');
+
+        $files =  $disk->allfiles($destination);
+
+        $disk->deleteDirectory($destination);
+
+        return $files;
+    }
+
+    protected function deleteLocalFile($path)
+    {
+        \File::deleteDirectory($path);
     }
 
 }

@@ -8,7 +8,7 @@ use Config;
 use Exception;
 use ZipArchive;
 
-class RestoreHelper
+class RestoreHelper extends FileHelper
 {
     protected $console;
     protected $database;
@@ -132,10 +132,14 @@ class RestoreHelper
 
         $latest10Size = count($latest10);
 
-        $option = $this->promptForChoice(
-            "Which option would you like to restore? [ 1 - " . $latest10Size . "]",
-            $latest10Size
-        );
+        if($latest10Size > 1) {
+            $option = $this->promptForChoice(
+                "Which option would you like to restore? [ 1 - " . $latest10Size . "]",
+                $latest10Size
+            );
+        } else {
+            $option = 1;
+        }
 
         $backupName = $latest10[$option - 1]["name"];
 
@@ -177,6 +181,11 @@ class RestoreHelper
         }*/
 
         //Restore the database
+
+        //Delete the temporary backup file
+        //Change to use BackupHelper deleteTargetDirectoryFiles
+        $this->fileHelper->deleteLocalFile(storage_path('temp-db-manager/'));
+        //$commandClass->deleteTargetDirectoryFiles(storage_path('temp-db-manager/'));
 
         return $backupFile;
     }
@@ -222,7 +231,6 @@ class RestoreHelper
                 }
 
             } else {
-
                 //prompt which one to extract
                 $this->command->info("Multiple sql files found in archive");
 

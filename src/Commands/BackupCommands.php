@@ -15,13 +15,10 @@ class BackupCommands extends Command
 
     protected $description = 'Run the backup';
 
-    protected $fileHelper = null;
-
     protected $backupHelper = null;
 
     public function fire()
     {
-        $this->fileHelper = new FileHelper();
 
         $this->backupHelper = new BackupHelper();
 
@@ -29,7 +26,7 @@ class BackupCommands extends Command
 
         //Check if the user has access to read and write files
         foreach ($this->getTargetFileSystems() as $fileSystem) {
-            $this->backupHelper->checkIfUserHasPermissions($fileSystem);
+            //$this->backupHelper->checkIfUserHasPermissions($fileSystem);
         }
 
         //Get all the tables that need to be backed up into their file names form the dump
@@ -155,19 +152,6 @@ class BackupCommands extends Command
         $disk->getDriver()->writeStream($destination, fopen($file, 'r+'));
     }
 
-    protected function deleteTargetDirectoryFiles($fileSystem)
-    {
-        $disk = Storage::disk($fileSystem);
-
-        $destination = config('db-manager.output.location');
-
-        $files =  $disk->allfiles($destination);
-
-        $disk->deleteDirectory($destination);
-
-        return $files;
-    }
-
     /**
      * Get the filesystem in use from the config
      *
@@ -275,8 +259,6 @@ class BackupCommands extends Command
 
         $backupFilename = $this->getBackupDestinationFileName();
 
-
-
         $this->copyFile($file, $disk, $backupFilename, $fileSystem == 'local');
 
         $this->comment('Backup stored on '.$fileSystem.'-filesystem in file "'.$backupFilename.'"');
@@ -343,7 +325,7 @@ class BackupCommands extends Command
 
         $this->info("Deleting all previous backups");
 
-        $deletedFiles = $this->deleteTargetDirectoryFiles($fileSystem);
+        $deletedFiles = $this->fileHelper->deleteTargetDirectoryFiles($fileSystem);
 
         foreach($deletedFiles as $file) {
             $this->info("Deleted backup file " . $file);
