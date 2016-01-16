@@ -1,10 +1,8 @@
 <?php namespace JulianPitt\DBManager\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
-use JulianPitt\DBManager\Helpers\FileHelper;
+use JulianPitt\DBManager\Helpers\RestoreHelper;
 use Symfony\Component\Console\Input\InputOption;
-use ZipArchive;
 
 class RestoreCommands extends Command
 {
@@ -13,11 +11,11 @@ class RestoreCommands extends Command
 
     protected $description = 'Restore the last backup';
 
-    protected $fileHelper = null;
+    protected $restoreHelper = null;
 
     public function fire()
     {
-        $this->fileHelper = new FileHelper();
+        $this->restoreHelper = new RestoreHelper();
 
         $this->info('Starting Restore');
 

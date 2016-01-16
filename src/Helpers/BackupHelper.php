@@ -131,7 +131,7 @@ class BackupHelper extends FileHelper
         }
 
         //Write the signature
-        $this->fileHelper->prependSignature($tempFile);
+        $this->prependSignature($tempFile);
 
         return $tempFile;
     }

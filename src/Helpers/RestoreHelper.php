@@ -184,8 +184,9 @@ class RestoreHelper extends FileHelper
 
         //Delete the temporary backup file
         //Change to use BackupHelper deleteTargetDirectoryFiles
-        $this->fileHelper->deleteLocalFile(storage_path('temp-db-manager/'));
-        //$commandClass->deleteTargetDirectoryFiles(storage_path('temp-db-manager/'));
+        $this->deleteLocalFile(storage_path('temp-db-manager/'));
+        //check if this should be here
+        $deletedFiles = $this->restoreHelper->deleteTargetDirectoryFiles($fileSystem);
 
         return $backupFile;
     }

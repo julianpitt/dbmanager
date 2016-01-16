@@ -3,8 +3,6 @@
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use JulianPitt\DBManager\Helpers\BackupHelper;
-use JulianPitt\DBManager\Helpers\FileHelper;
-use PhpParser\Node\Scalar\MagicConst\File;
 use Symfony\Component\Console\Input\InputOption;
 use ZipArchive;
 
@@ -177,7 +175,7 @@ class BackupCommands extends Command
     protected function getBackupDestinationFileName()
     {
         $backupDirectory = config('db-manager.output.location');
-        $backupFilename = $this->getPrefix().$this->getFilename().$this->getSuffix().$this->fileHelper->getOutputFileType();
+        $backupFilename = $this->getPrefix().$this->getFilename().$this->getSuffix().$this->backupHelper->getOutputFileType();
 
         return $backupDirectory.'/'.$backupFilename;
     }
@@ -325,7 +323,7 @@ class BackupCommands extends Command
 
         $this->info("Deleting all previous backups");
 
-        $deletedFiles = $this->fileHelper->deleteTargetDirectoryFiles($fileSystem);
+        $deletedFiles = $this->backupHelper->deleteTargetDirectoryFiles($fileSystem);
 
         foreach($deletedFiles as $file) {
             $this->info("Deleted backup file " . $file);

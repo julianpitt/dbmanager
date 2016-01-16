@@ -7,7 +7,7 @@ use JulianPitt\DBManager\Databases\MySQLDatabase;
 class FileHelper
 {
 
-    protected function getOutputFileType()
+    public function getOutputFileType()
     {
 
         $compress = config('db-manager.output.compress');
@@ -20,12 +20,12 @@ class FileHelper
 
     }
 
-    protected function unzip()
+    public function unzip()
     {
 
     }
 
-    protected function prependSignature($filename)
+    public function prependSignature($filename)
     {
         //Get Current Date
         $now = Carbon::now();
@@ -80,7 +80,7 @@ EOT;
         rename($tmpname, $filename);
     }
 
-    protected function getLatestFile($fileHandler, $directory)
+    public function getLatestFile($fileHandler, $directory)
     {
 
     }
@@ -90,7 +90,7 @@ EOT;
      *
      * @return string
      */
-    protected function getSignatureCode($type, $database)
+    public function getSignatureCode($type, $database)
     {
         $code = "";
         $separator = "|";
@@ -109,7 +109,7 @@ EOT;
         return $code;
     }
 
-    protected function copyFile($file, $disk, $destination)
+    public function copyFile($file, $disk, $destination)
     {
         $destinationDirectory = dirname($destination);
 
@@ -122,7 +122,7 @@ EOT;
         $disk->getDriver()->writeStream($destination, fopen($file, 'r+'));
     }
 
-    protected function deleteTargetDirectoryFiles($fileSystem)
+    public function deleteTargetDirectoryFiles($fileSystem)
     {
         $disk = Storage::disk($fileSystem);
 
@@ -135,7 +135,7 @@ EOT;
         return $files;
     }
 
-    protected function deleteLocalFile($path)
+    public function deleteLocalFile($path)
     {
         \File::deleteDirectory($path);
     }
