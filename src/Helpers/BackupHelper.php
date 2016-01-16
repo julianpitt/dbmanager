@@ -152,19 +152,24 @@ class BackupHelper extends FileHelper
 
         //open, write to and close a file
         try {
-            $file = fopen($filepath, "w");
+            $file = tmpfile();
             fwrite($file, $testString);
+            if(!$this->copyFileToFileSystem($file, $fileSystem, $filepath)){
+                throw new \Exception('Can\'t write to filesystem');
+            }
             fclose($file);
         } catch (Exception $e) {
-            throw new \Exception("Unable to write to file, make sure you have the correct permissions.\n Tried writing to" .
-                $filepath);
+            throw new \Exception("Unable to write to file, make sure you have the correct permissions.\nTried writing to " .
+                $filepath . "\n" . $e);
         }
 
         //open, read, and close the file
         try {
-            $file = fopen($filepath, "r");
+            /*$file = fopen($filepath, "r");
             $savedString = fgets($file);
-            fclose($file);
+            fclose($file);*/
+            $disk = Storage::disk($fileSystem);
+            $disk->getDriver()->
             if(strcasecmp($savedString, $testString) != 0) {
                 throw new \Exception("Saved file does not have the expected message, make sure you have the correct permissions");
             }

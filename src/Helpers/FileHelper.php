@@ -4,7 +4,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use JulianPitt\DBManager\Databases\MySQLDatabase;
 
-class FileHelper
+abstract class FileHelper
 {
 
     public function getOutputFileType()
@@ -119,7 +119,12 @@ EOT;
          * The file could be quite large. Use a stream to copy it
          * to the target disk to avoid memory problems
          */
-        $disk->getDriver()->writeStream($destination, fopen($file, 'r+'));
+
+        if (is_string($file)) {
+            $file = fopen($file, 'r+');
+        }
+
+        $disk->getDriver()->writeStream($destination, $file);
     }
 
     public function deleteTargetDirectoryFiles($fileSystem)
@@ -138,6 +143,25 @@ EOT;
     public function deleteLocalFile($path)
     {
         \File::deleteDirectory($path);
+    }
+
+    public function copyFileToFileSystem($file, $fileSystem, $backupFileName)
+    {
+        try {
+            $disk = Storage::disk($fileSystem);
+
+            $this->copyFile($file, $disk, $backupFileName);
+        } catch (\Exception $e) {
+            throw new \Exception($e);
+            return false;
+        }
+
+        return true;
+    }
+
+    public function getTemporaryFileDir()
+    {
+        return storage_path('temp-db-manager/');
     }
 
 }

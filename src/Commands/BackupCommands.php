@@ -22,12 +22,20 @@ class BackupCommands extends Command
 
         $this->info('Starting backup');
 
-        //Check if the user has access to read and write files
+
+        /**
+         * Check if the user has access to read and write files, does the user have permission?
+         */
+
         foreach ($this->getTargetFileSystems() as $fileSystem) {
-            //$this->backupHelper->checkIfUserHasPermissions($fileSystem);
+            $this->backupHelper->checkIfUserHasPermissions($fileSystem);
         }
 
-        //Get all the tables that need to be backed up into their file names form the dump
+
+        /**
+         * Get all the tables that need to be backed up into their filenames from the dump
+         */
+
         $files = $this->getAllTablesToBeBackedUp();
 
         if (count($files) <= 0) {
@@ -35,7 +43,11 @@ class BackupCommands extends Command
             return true;
         }
 
-        //Compress the resulting file if needed
+
+        /**
+         * Compress the backup file if needed
+         */
+
         $compress = config('db-manager.output.compress');
 
         if(!isset($compress) || (isset($compress) && !is_bool($compress))) {
@@ -54,14 +66,18 @@ class BackupCommands extends Command
 
         }
 
-        //Delete previous backups if needed
+
+        /**
+         * Delete previous backups if needed
+         */
+
         $keepLastOnly = config('db-manager.output.keeplastonly');
 
         if(!isset($keepLastOnly) || (isset($keepLastOnly) && !is_bool($keepLastOnly))) {
             $keepLastOnly = false;
         }
 
-        $this->info("Kepp last output only: " . ($keepLastOnly ? "True" : "False"));
+        $this->info("Keep last output only: " . ($keepLastOnly ? "True" : "False"));
 
         if(!empty($keepLastOnly) && is_bool($keepLastOnly) && $keepLastOnly) {
             foreach ($this->getTargetFileSystems() as $fileSystem) {
@@ -69,7 +85,11 @@ class BackupCommands extends Command
             }
         }
 
-        //Copy all the files to your chosen location
+
+        /**
+         * Copy all the files to your chosen location
+         */
+
         foreach ($this->getTargetFileSystems() as $fileSystem) {
             if($compress) {
                 $this->copyFileToFileSystem($backupZipFile, $fileSystem);
@@ -80,7 +100,11 @@ class BackupCommands extends Command
             }
         }
 
-        //Unlink the files
+
+        /**
+         * Delete the files
+         */
+
         if($compress) {
             unlink($backupZipFile);
         } else {
@@ -137,18 +161,6 @@ class BackupCommands extends Command
         return $tempZipFile;
     }
 
-    protected function copyFile($file, $disk, $destination)
-    {
-        $destinationDirectory = dirname($destination);
-
-        $disk->makeDirectory($destinationDirectory);
-
-        /*
-         * The file could be quite large. Use a stream to copy it
-         * to the target disk to avoid memory problems
-         */
-        $disk->getDriver()->writeStream($destination, fopen($file, 'r+'));
-    }
 
     /**
      * Get the filesystem in use from the config
@@ -253,13 +265,13 @@ class BackupCommands extends Command
     {
         $this->comment('Start uploading backup to '.$fileSystem.'-filesystem...');
 
-        $disk = Storage::disk($fileSystem);
-
         $backupFilename = $this->getBackupDestinationFileName();
 
-        $this->copyFile($file, $disk, $backupFilename, $fileSystem == 'local');
-
-        $this->comment('Backup stored on '.$fileSystem.'-filesystem in file "'.$backupFilename.'"');
+        if($this->backupHelper->copyFileToFileSystem($file, $fileSystem, $backupFilename)) {
+            $this->comment('Backup stored on '.$fileSystem.'-filesystem in file "'.$backupFilename.'"');
+        } else {
+            $this->warn('Unable to send file "'.$backupFilename.'" to '.$fileSystem.'-filesystem');
+        }
     }
 
     /**

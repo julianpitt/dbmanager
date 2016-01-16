@@ -146,7 +146,7 @@ class RestoreHelper extends FileHelper
         $this->command->info("You chose to back up " . $backupName);
 
         //Check if it is compressed
-        $tempBackupFile = tempnam(sys_get_temp_dir(), "db-manager-backup");
+        $tempBackupFile = tempnam($this->getTemporaryFileDir(), "db-manager-backup");
         $ext = pathinfo($backupName, PATHINFO_EXTENSION);
 
         file_put_contents($tempBackupFile, $disk->get($backupName));
@@ -184,7 +184,7 @@ class RestoreHelper extends FileHelper
 
         //Delete the temporary backup file
         //Change to use BackupHelper deleteTargetDirectoryFiles
-        $this->deleteLocalFile(storage_path('temp-db-manager/'));
+        $this->deleteLocalFile($this->getTemporaryFileDir());
         //check if this should be here
         $deletedFiles = $this->restoreHelper->deleteTargetDirectoryFiles($fileSystem);
 
@@ -225,7 +225,7 @@ class RestoreHelper extends FileHelper
             } else if (count($sqlFilesInArchive) == 1) {
 
                 //extract one
-                $backupFile = $zip->extractTo(storage_path('/temp-db-manager/'), $sqlFilesInArchive[0]);
+                $backupFile = $zip->extractTo($this->getTemporaryFileDir(), $sqlFilesInArchive[0]);
 
                 if($backupFile) {
                     $backupFile = $sqlFilesInArchive[0];
@@ -242,7 +242,7 @@ class RestoreHelper extends FileHelper
 
                 $extractFile = $sqlFilesInArchive[($option - 1)];
 
-                $backupFile = $zip->extractTo(storage_path('/temp-db-manager/'), $extractFile);
+                $backupFile = $zip->extractTo($this->getTemporaryFileDir(), $extractFile);
 
                 if($backupFile) {
                     $backupFile = $extractFile;
@@ -252,7 +252,7 @@ class RestoreHelper extends FileHelper
 
             if($backupFile) {
 
-                $backupFile = storage_path('/temp-db-manager/') . $backupFile;
+                $backupFile = $this->getTemporaryFileDir() . $backupFile;
 
             }  else {
 
