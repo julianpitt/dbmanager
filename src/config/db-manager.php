@@ -40,7 +40,7 @@ return [
         'compress'      => env('DBMAN_OUTPUT_COMPRESS', true),
         'keeplastonly'  => env('DBMAN_OUTPUT_KEEPLASTONLY', false),
         'filesystem'    => env('DBMAN_OUTPUT_FILESYSTEM', "local"),
-        'location'      => env('DBMAN_OUTPUT_LOCATION', "/backups"),
+        'location'      => env('DBMAN_OUTPUT_LOCATION', "/backups/"),
         'useExtendedInsert' => true,
         'timeoutInSeconds'  => 60,
         'tables'        => env('DBMAN_OUTPUT_TABLES', "laravel"),
