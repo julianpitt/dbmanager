@@ -102,15 +102,11 @@ class BackupCommands extends Command
 
 
         /**
-         * Delete the files
+         * Delete the temporary files
          */
 
-        if($compress) {
-            unlink($backupZipFile);
-        } else {
-            foreach($files as $file) {
-                unlink($file['realFile']);
-            }
+        if(!$this->backupHelper->cleanUpTemporaryFiles()) {
+            $this->warn('Unable to remove temporary files, may need to be manually removed');
         }
 
         $this->info('Backup successfully completed');
@@ -143,7 +139,7 @@ class BackupCommands extends Command
     {
         $this->comment('Start zipping '.count($files).' files...');
 
-        $tempZipFile = tempnam(sys_get_temp_dir(), "db-manager-backup");
+        $tempZipFile = $this->backupHelper->getTemporaryFileDir() . $this->backupHelper->getTemporaryFileName();
 
         $zip = new ZipArchive();
         $zip->open($tempZipFile, ZipArchive::CREATE);
@@ -155,6 +151,8 @@ class BackupCommands extends Command
         }
 
         $zip->close();
+
+        chmod($tempZipFile, 0777);
 
         $this->comment('Zip created!');
 
@@ -175,7 +173,41 @@ class BackupCommands extends Command
             return $fileSystems;
         }
 
+        $arrayString = $this->is_array_string($fileSystems);
+
+        if (is_array($arrayString)) {
+            return $arrayString;
+        }
+
         return [$fileSystems];
+    }
+
+    protected function is_array_string($string)
+    {
+        if(strlen($string) <= 2) {
+            return false;
+        }
+
+        if( $string[0] != '[' ||
+            $string[strlen($string)-1] != ']') {
+             return false;
+        }
+
+        try {
+            $arr = explode(',', substr($string, 1, strlen($string) - 2));
+            if(count($arr) <= 0) {
+                return false;
+            }
+        } catch (\Exception $e) {
+            return false;
+        }
+
+        $arr = array_map(function($obj) {
+            $bad = ['\'', '"'];
+            return trim(str_replace($bad, "", $obj));
+        }, $arr);
+
+        return $arr;
     }
 
     /**

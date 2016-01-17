@@ -19,24 +19,17 @@ class RestoreCommands extends Command
 
         $this->info('Starting Restore');
 
-        $this->restoreLastBackup($this->getTargetFileSystem());
-
-        $this->info('Restore successfully completed');
-
-        return true;
-    }
-
-    protected function restoreLastBackup($fileSystem)
-    {
-        $databaseRestoreHandler = app()->make('JulianPitt\DBManager\Helpers\RestoreHelper');
-
-        $fileToRestore = $databaseRestoreHandler->getFileToRestore($this, $fileSystem);
+        $fileToRestore = $this->restoreHelper->getFileToRestore($this, $this->getTargetFileSystem());
 
         if(count($fileToRestore) < 1) {
             throw new \Exception('Could not restore db');
         }
 
         $this->comment('Database restored');
+
+        $this->info('Restore successfully completed');
+
+        return true;
     }
 
     protected function getTargetFileSystem()

@@ -9,7 +9,6 @@ abstract class FileHelper
 
     public function getOutputFileType()
     {
-
         $compress = config('db-manager.output.compress');
 
         if (!isset($compress) || (isset($compress) && !is_bool($compress)) || (isset($compress) && is_bool($compress) && $compress)) {
@@ -17,12 +16,6 @@ abstract class FileHelper
         }
 
         return "." . MySQLDatabase::getFileExtension();
-
-    }
-
-    public function unzip()
-    {
-
     }
 
     public function prependSignature($filename)
@@ -80,10 +73,6 @@ EOT;
         rename($tmpname, $filename);
     }
 
-    public function getLatestFile($fileHandler, $directory)
-    {
-
-    }
 
     /**
      * Generates a 3 part resotre code to help this package identify the backup type
@@ -109,6 +98,13 @@ EOT;
         return $code;
     }
 
+    /**
+     * Copies a file using a a disk driver, file handler or string and a destination file path using streams
+     *
+     * @param $file
+     * @param $disk
+     * @param $destination
+     */
     public function copyFile($file, $disk, $destination)
     {
         $destinationDirectory = dirname($destination);
@@ -120,11 +116,16 @@ EOT;
          * to the target disk to avoid memory problems
          */
 
-        if (is_string($file)) {
+        $ispath = is_string($file);
+        if ($ispath) {
             $file = fopen($file, 'r+');
         }
 
         $disk->getDriver()->writeStream($destination, $file);
+
+        if($ispath) {
+            fclose($file);
+        }
     }
 
     public function deleteTargetDirectoryFiles($fileSystem)
@@ -152,16 +153,85 @@ EOT;
 
             $this->copyFile($file, $disk, $backupFileName);
         } catch (\Exception $e) {
-            throw new \Exception($e);
             return false;
         }
 
         return true;
     }
 
+
+    /*************************************************************
+     * Temporary file methods
+     *************************************************************/
+
+    public function prepareTemporaryDir()
+    {
+        if (!is_dir($this->getTemporaryFileDir())) {
+            mkdir($this->getTemporaryFileDir(), 0777, true);
+        } else {
+            chmod($this->getTemporaryFileDir(), 0777);
+        }
+    }
+
+    public function getTemporaryFile()
+    {
+        $tempFileName = $this->getTemporaryFileDir() . $this->getTemporaryFileName();
+
+        $file = fopen($tempFileName, 'w+');
+
+        chmod($tempFileName, 0777);
+
+        return [
+            'handler'   => $file,
+            'path'      => $tempFileName
+        ];
+    }
+
     public function getTemporaryFileDir()
     {
         return storage_path('temp-db-manager/');
     }
+
+    public function getTemporaryFileName()
+    {
+        return uniqid('db-manager-temp', true);
+    }
+
+    public function cleanUpTemporaryFiles()
+    {
+        return $this->delTree($this->getTemporaryFileDir());
+    }
+
+    /*************************************************************
+     * Generic file methods
+     *************************************************************/
+
+    /**
+     * Removes a directory and all nested files and nested directories.
+     * Source: http://php.net/manual/en/function.rmdir.php#110489
+     *
+     * @param $dir
+     * @return bool
+     */
+    private function delTree($dir) {
+
+        $files = array_diff(scandir($dir), array('.','..'));
+
+        foreach ($files as $file) {
+            if(is_dir("$dir/$file")) {
+                $this->delTree("$dir/$file");
+            } else {
+                try {
+                    unlink("$dir/$file");
+                } catch (\Exception $e) {
+                    chmod("$dir/$file", 0777);
+                    unlink("$dir/$file");
+                }
+            }
+        }
+
+        return rmdir($dir);
+    }
+
 
 }

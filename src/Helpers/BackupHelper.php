@@ -14,6 +14,7 @@ class BackupHelper extends FileHelper
     public function __construct()
     {
         $this->console = new Console();
+        $this->prepareTemporaryDir();
     }
 
     /**
@@ -141,23 +142,30 @@ class BackupHelper extends FileHelper
         return [$this->getDumpedDatabase($commandClass)];
     }
 
-    //TODO make it take in the filesystem and write to that
+    /**
+     * Uses the filesystem that is passed in and creates, writes, closes, opens, reads and compares the file contents
+     * to make sure the user can perform all the necessary actions i.e. the user has the correct permissions
+     *
+     * @param $fileSystem
+     * @return bool
+     * @throws Exception
+     */
     public function checkIfUserHasPermissions($fileSystem)
     {
         $disk = Storage::disk($fileSystem);
 
-        $filepath = config('db-manager.output.location') . "/testingPermissions.txt";
+        $filepath = config('db-manager.output.location') . $this->getTemporaryFileName();
 
         $testString = "Testing to see if the user can write to the output directory";
 
         //open, write to and close a file
         try {
-            $file = tmpfile();
-            fwrite($file, $testString);
-            if(!$this->copyFileToFileSystem($file, $fileSystem, $filepath)){
+            $file = $this->getTemporaryFile();
+            fwrite($file['handler'], $testString);
+            if(!$this->copyFileToFileSystem($file['handler'], $fileSystem, $filepath)){
                 throw new \Exception('Can\'t write to filesystem');
             }
-            fclose($file);
+            fclose($file['handler']);
         } catch (Exception $e) {
             throw new \Exception("Unable to write to file, make sure you have the correct permissions.\nTried writing to " .
                 $filepath . "\n" . $e);
@@ -165,23 +173,22 @@ class BackupHelper extends FileHelper
 
         //open, read, and close the file
         try {
-            /*$file = fopen($filepath, "r");
-            $savedString = fgets($file);
-            fclose($file);*/
-            $disk = Storage::disk($fileSystem);
-            $disk->getDriver()->
+
+            $savedString = $disk->get($filepath);
+
             if(strcasecmp($savedString, $testString) != 0) {
                 throw new \Exception("Saved file does not have the expected message, make sure you have the correct permissions");
             }
 
             //delete the file
-            if(!unlink($filepath)) {
+            if(!$disk->delete($filepath)) {
                 throw new \Exception("Unable to remove the temporary test file, make sure you have the correct permissions");
             }
 
         } catch (Exception $e) {
-            throw new \Exception("Unable to read file, make sure you have the correct permissions" . $filepath);
+            throw new \Exception("Unable to read file, make sure you have the correct permissions" . $filepath . "\n" . $e);
         }
+
         return true;
     }
 
