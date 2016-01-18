@@ -33,7 +33,7 @@ For backups
 php artisan dbman:backup
 ```
 
-For restores ( currently in production )
+For restores ( currently in development )
 ``` bash
 php artisan dbman:restore
 ```

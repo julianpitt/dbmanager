@@ -3,9 +3,9 @@
 namespace JulianPitt\DBManager\Databases\MySQL;
 
 use \DB;
-use JulianPitt\DBManager\Interfaces\QueryHandler;
+use JulianPitt\DBManager\Interfaces\QueryInterface;
 
-class MySqlQueries implements QueryHandler
+class Queries implements QueryInterface
 {
 
     public function getDatabases()

@@ -1,7 +1,7 @@
 <?php namespace JulianPitt\DBManager\Helpers;
 
 use Illuminate\Support\Facades\Storage;
-use JulianPitt\DBManager\Databases\MySQLDatabase;
+use JulianPitt\DBManager\Databases\MySQL\Database;
 use JulianPitt\DBManager\Console;
 use Config;
 use Exception;
@@ -48,7 +48,7 @@ class BackupHelper extends FileHelper
 
         $socket = isset($config['unix_socket']) ? $config['unix_socket'] : '';
 
-        $this->database = new MySQLDatabase(
+        $this->database = new Database(
             $this->console,
             $config['database'],
             $config['username'],

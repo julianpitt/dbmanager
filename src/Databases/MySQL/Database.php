@@ -1,12 +1,11 @@
-<?php namespace JulianPitt\DBManager\Databases;
+<?php namespace JulianPitt\DBManager\Databases\MySQL;
 
 use JulianPitt\DBManager\Console;
 use Config;
-use JulianPitt\DBManager\Databases\MySQL\MySqlQueries;
-use JulianPitt\DBManager\Interfaces\DatabaseHandler;
+use JulianPitt\DBManager\Interfaces\DatabaseInterface;
 use Mockery\CountValidator\Exception;
 
-class MySQLDatabase implements DatabaseHandler
+class Database implements DatabaseInterface
 {
     protected $console;
     protected $database;
@@ -27,7 +26,7 @@ class MySQLDatabase implements DatabaseHandler
         $this->host = $host;
         $this->port = $port;
         $this->socket = $socket;
-        $this->queries = new MySqlQueries();
+        $this->queries = new Queries();
     }
 
     /**
@@ -41,7 +40,7 @@ class MySQLDatabase implements DatabaseHandler
         $tempFileHandle = tmpfile();
 
         if ($tempFileHandle === false) {
-            throw new Exception("Unable to make temporary file");
+            throw new \Exception("Unable to make temporary file");
         }
 
         fwrite($tempFileHandle,

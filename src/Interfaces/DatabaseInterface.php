@@ -2,7 +2,7 @@
 
 namespace JulianPitt\DBManager\Interfaces;
 
-interface DatabaseHandler
+interface DatabaseInterface
 {
 
     public function dumpAll($destinationFile);

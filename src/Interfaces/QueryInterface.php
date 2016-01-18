@@ -2,7 +2,7 @@
 
 namespace JulianPitt\DBManager\Interfaces;
 
-interface QueryHandler
+interface QueryInterface
 {
 
     public function getDatabases();
