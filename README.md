@@ -1,7 +1,6 @@
 # Laravel Database Manager
 
-A highly configurable database backup and restore solution for laravel projects
-
+A highly configurable database backup and restore solution for laravel 5 projects
 ## Install
 
 Via Composer
@@ -10,7 +9,15 @@ Via Composer
 $ composer require julianpitt/dbmanager
 ```
 
+Then publish the config after you update composer
+
+``` bash
+$ php artisan config:publish julianpitt/dbmanager
+```
+
+
 ## Usage
+
 ###From the project directory
 
 For backups

@@ -1,13 +1,12 @@
 {
-    "name": "julianpitt/dbdatamanager",
-    "description": "A simple package to backup and restore laravel table data",
+    "name": "julianpitt/dbmanager",
+    "description": "A highly configurable database backup and restore solution for laravel projects",
     "keywords": [
-        "league",
         "LaravelDatabaseManager",
         "julianpitt",
         "DBManager"
     ],
-    "homepage": "https://github.com/julianpitt/LaravelMySqlBackup",
+    "homepage": "https://github.com/julianpitt/dbmanager",
     "license": "MIT",
     "authors": [
         {
@@ -18,7 +17,7 @@
         }
     ],
     "require": {
-        "illuminate/support": "~5.1",
+        "illuminate/support": "~5.0",
         "php" : ">=5.3.0"
     },
     "require-dev": {
