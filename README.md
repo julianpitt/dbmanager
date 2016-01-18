@@ -9,10 +9,18 @@ Via Composer
 $ composer require julianpitt/dbmanager
 ```
 
+Add the service provider to your config/app.php file's provider array
+
+``` php
+...
+    'JulianPitt\DBManager\DBManagerServiceProvider',
+...
+```
+
 Then publish the config after you update composer
 
 ``` bash
-$ php artisan config:publish julianpitt/dbmanager
+$ php artisan vendor:publish --provider="JulianPitt\DBManager\DBManagerServiceProvider"
 ```
 
 
