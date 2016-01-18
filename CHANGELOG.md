@@ -2,6 +2,14 @@
 
 All Notable changes to `julianpitt\dbmanager` will be documented in this file
 
+### 1.0.2 2016-01-18
+
+#### Fixed
+- Crash when adding signature on backup file
+
+#### Changed
+- Added checking if mysqldump path exists
+
 ### 1.0.1 2016-01-18
 
 #### Changed

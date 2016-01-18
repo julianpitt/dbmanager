@@ -145,7 +145,15 @@ class Database implements DatabaseInterface
 
     protected function getDumpCommandPath()
     {
-        return config('db-manager.mysqlbinloc');
+        $output = config('db-manager.mysqlbinloc');
+
+        if(empty($output)) {
+            throw new \Exception('The mysql path is not set');
+        } else if(!file_exists($output)) {
+            throw new \Exception('The mysql path set ('.$output.') does not exist');
+        }
+
+        return $output;
     }
 
     protected function useExtendedInsert()

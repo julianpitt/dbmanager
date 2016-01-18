@@ -43,8 +43,12 @@ abstract class FileHelper
 
         //Get Tables Backed Up
         $tablesBackedUp = config("db-manager.output.tables");
-        $tablesBackedUp = config("db-manager.tables.".$tablesBackedUp);
-        $tablesBackedUp = implode(", ", $tablesBackedUp);
+        if(empty($tablesBackedUp)) {
+            $tablesBackedUp = "ALL TABLES";
+        } else {
+            $tablesBackedUp = config("db-manager.tables." . $tablesBackedUp);
+            $tablesBackedUp = implode(", ", $tablesBackedUp);
+        }
 
         //Get Signature code
         $code = $this->getSignatureCode($type, $databaseBackedUp);

@@ -351,8 +351,7 @@ class BackupCommands extends Command
     public function deletePreviousBackups($fileSystem)
     {
         do {
-
-            $name = $this->ask('Are you sure you want to remove all previous backups? [y/n]');
+            $name = $this->ask('Are you sure you want to remove all previous backups from the filesystem '.$fileSystem.'? [y/n]');
             if(strcasecmp ($name, "y") != 0 && strcasecmp ($name, "n") != 0) {
                 $this->info("Invalid response, type 'y' for yes or 'n' for no. Let's try again. This is serious, if it wasn't, I would've use the confirm method to write this");
             }
