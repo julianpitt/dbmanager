@@ -2,6 +2,7 @@
 
 namespace JulianPitt\DBManager;
 
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Routing\Router;
 
@@ -39,6 +40,11 @@ class DBManagerServiceProvider extends ServiceProvider
      */
     public function register()
     {
+
+        App::bind('dbmanager', function()
+        {
+            return new \JulianPitt\DBManager\DBManagerClass;
+        });
 
         $this->app['command.dbman:backup'] = $this->app->share(
             function ($app) {

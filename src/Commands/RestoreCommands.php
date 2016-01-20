@@ -19,15 +19,23 @@ class RestoreCommands extends Command
 
         $this->info('Starting Restore');
 
-        $fileToRestore = $this->restoreHelper->getFileToRestore($this, $this->getTargetFileSystem());
+        try {
+            $fileToRestore = $this->restoreHelper->getFileToRestore($this, $this->getTargetFileSystem());
 
-        if(count($fileToRestore) < 1) {
-            throw new \Exception('Could not restore db');
+            if (count($fileToRestore) < 1) {
+                throw new \Exception('Could not restore db');
+            }
+
+            $this->comment('Database restored');
+
+            $this->info('Restore successfully completed');
+
+        } catch (\Exception $e) {
+            $this->warn('An Error occurred');
+            $this->warn("Code: " . $e->getCode());
+            $this->warn("Message: \n". $e->getMessage());
+            $this->warn("Starck Trace: \n" . $e->getTraceAsString());
         }
-
-        $this->comment('Database restored');
-
-        $this->info('Restore successfully completed');
 
         return true;
     }

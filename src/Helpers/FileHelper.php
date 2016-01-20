@@ -127,7 +127,7 @@ EOT;
 
         $disk->getDriver()->writeStream($destination, $file);
 
-        if($ispath) {
+        if($ispath && is_resource($file)) {
             fclose($file);
         }
     }
