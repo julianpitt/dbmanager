@@ -45,6 +45,7 @@ return [
         'timeoutInSeconds'  => 60,
         'tables'        => env('DBMAN_OUTPUT_TABLES', "laravel"),
         'backupType'    => env('DBMAN_OUTPUT_BACKUPTYPE', "dataandstructure"),
+        'checkPermissions' => env('DBMAN_CHECK_PERMISSIONS', true),
     ],
 
     'tables' => [

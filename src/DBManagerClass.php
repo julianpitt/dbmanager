@@ -11,16 +11,25 @@ class DBManagerClass
     /**
      * Create a new DBManagerClass Instance
      */
+    private $backupClass;
 
     public function __construct()
     {
         // constructor body
         $this->backupClass = new BackupHelper();
+
     }
 
     public function hasPermission()
     {
-        return $this->backupClass->checkIfUserHasPermissions('local');
+        $result = $this->backupClass->checkIfUserHasPermissions('local');
+        $this->backupClass->cleanUpTemporaryFiles();
+        return $result;
+    }
+
+    public function backup()
+    {
+        $this->backupClass->backup();
     }
 
 }

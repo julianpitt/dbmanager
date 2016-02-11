@@ -1,10 +1,10 @@
 <?php namespace JulianPitt\DBManager\Helpers;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
-use JulianPitt\DBManager\Databases\MySQLDatabase;
+use JulianPitt\DBManager\Databases\MySQL\Database;
 use JulianPitt\DBManager\Console;
-use Config;
 use Exception;
 use ZipArchive;
 
@@ -36,7 +36,7 @@ class RestoreHelper extends FileHelper
 
         $socket = isset($config['unix_socket']) ? $config['unix_socket'] : '';
 
-        $this->database = new MySQLDatabase(
+        $this->database = new Database(
             $this->console,
             $config['database'],
             $config['username'],
@@ -63,15 +63,15 @@ class RestoreHelper extends FileHelper
     public function getDatabase($connectionName = '')
     {
 
-        $connectionName = $connectionName ?: config('database.default');
+        $connectionName = $connectionName ?: Config::get('database.default');
 
-        $dbDriver = config("database.connections.{$connectionName}.driver");
+        $dbDriver = Config::get("database.connections.{$connectionName}.driver");
 
         if ($dbDriver != 'mysql') {
             throw new Exception('DBManager currently doesn\'t support your database');
         }
 
-        return $this->getDatabaseConnection(config("database.connections.{$connectionName}"));
+        return $this->getDatabaseConnection(Config::get("database.connections.{$connectionName}"));
     }
 
     public function getFileToRestore($commandClass, $fileSystem)
@@ -88,7 +88,7 @@ class RestoreHelper extends FileHelper
         //Get the last back up from the file handler
         $disk = Storage::disk($fileSystem[0]);
 
-        $backupDirectory = config('db-manager.output.location') . "/";
+        $backupDirectory = Config::get('db-manager.output.location') . "/";
 
         $allFiles = $disk->files($backupDirectory);
 

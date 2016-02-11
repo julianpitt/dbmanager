@@ -42,16 +42,16 @@ class RestoreCommands extends Command
 
     protected function getTargetFileSystem()
     {
-        $sameAsOutput = config('db-manager.input.sameAsOutput');
+        $sameAsOutput = Config::get('db-manager.input.sameAsOutput');
 
         if( !isset($sameAsOutput) || (isset($sameAsOutput) && !is_bool($sameAsOutput))) {
             $sameAsOutput = true;
         }
 
-        $fileSystem = config('db-manager.output.filesystem');
+        $fileSystem = Config::get('db-manager.output.filesystem');
 
         if(!$sameAsOutput) {
-            $fileSystem = config('db-manager.input.filesystem');
+            $fileSystem = Config::get('db-manager.input.filesystem');
         }
 
         if (is_array($fileSystem)) {
@@ -63,7 +63,7 @@ class RestoreCommands extends Command
 
     protected function getBackupDestinationFileName()
     {
-        $backupDirectory = config('db-manager.output.location');
+        $backupDirectory = Config::get('db-manager.output.location');
         $backupFilename = $this->getPrefix().$this->getFilename().$this->getSuffix().'.zip';
 
         return $backupDirectory.'/'.$backupFilename;
@@ -75,7 +75,7 @@ class RestoreCommands extends Command
             return $this->option('prefix');
         }
 
-        return config('db-manager.output.prefix');
+        return Config::get('db-manager.output.prefix');
     }
 
     public function getFilename()
@@ -84,11 +84,11 @@ class RestoreCommands extends Command
             return $this->option('filename');
         }
 
-        if (config('db-manager.output.filename') != '') {
+        if (Config::get('db-manager.output.filename') != '') {
             throw new \Exception('Filename not set in config');
         }
 
-        return config('db-manager.output.filename');
+        return Config::get('db-manager.output.filename');
     }
 
     public function getSuffix()
@@ -97,7 +97,7 @@ class RestoreCommands extends Command
             return $this->option('suffix');
         }
 
-        return config('db-manager.output.suffix');
+        return Config::get('db-manager.output.suffix');
     }
 
     protected function getOptions()

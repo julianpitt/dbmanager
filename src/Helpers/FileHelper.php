@@ -1,15 +1,17 @@
 <?php namespace JulianPitt\DBManager\Helpers;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use JulianPitt\DBManager\Databases\MySQLDatabase;
+use League\Flysystem\FileExistsException;
 
 abstract class FileHelper
 {
 
     public function getOutputFileType()
     {
-        $compress = config('db-manager.output.compress');
+        $compress = Config::get('db-manager.output.compress');
 
         if (!isset($compress) || (isset($compress) && !is_bool($compress)) || (isset($compress) && is_bool($compress) && $compress)) {
             return ".zip";
@@ -24,7 +26,7 @@ abstract class FileHelper
         $now = Carbon::now();
 
         //Get Backup Type
-        $type = config('db-manager.output.backupType');
+        $type = Config::get('db-manager.output.backupType');
 
         if (empty($type)) {
             $backupType = "Data and Structure";
@@ -39,14 +41,14 @@ abstract class FileHelper
         $backupType = "Data and Structure";
 
         //Get Database Backed Up
-        $databaseBackedUp = config("database.connections.mysql.database");
+        $databaseBackedUp = Config::get("database.connections.mysql.database");
 
         //Get Tables Backed Up
-        $tablesBackedUp = config("db-manager.output.tables");
+        $tablesBackedUp = Config::get("db-manager.output.tables");
         if(empty($tablesBackedUp)) {
             $tablesBackedUp = "ALL TABLES";
         } else {
-            $tablesBackedUp = config("db-manager.tables." . $tablesBackedUp);
+            $tablesBackedUp = Config::get("db-manager.tables." . $tablesBackedUp);
             $tablesBackedUp = implode(", ", $tablesBackedUp);
         }
 
@@ -136,7 +138,7 @@ EOT;
     {
         $disk = Storage::disk($fileSystem);
 
-        $destination = config('db-manager.output.location');
+        $destination = Config::get('db-manager.output.location');
 
         $files =  $disk->allfiles($destination);
 
@@ -150,14 +152,24 @@ EOT;
         \File::deleteDirectory($path);
     }
 
-    public function copyFileToFileSystem($file, $fileSystem, $backupFileName)
+    public function copyFileToFileSystem($file, $fileSystem, &$backupFileName=null)
     {
+        $uploadName = pathinfo($backupFileName);
+        $inc = '';
         try {
-            $disk = Storage::disk($fileSystem);
-
-            $this->copyFile($file, $disk, $backupFileName);
+            $done = 0;
+            do {
+                try {
+                    $disk = Storage::disk($fileSystem);
+                    $backupFileName = $uploadName['dirname'] . "/" . $uploadName['filename'] . $inc . "." .$uploadName['extension'];
+                    $this->copyFile($file, $disk, $backupFileName);
+                    $done = 1;
+                } catch (FileExistsException $e) {
+                    (is_numeric($inc) ? $inc++ : $inc = 1);
+                }
+            } while ($done < 1);
         } catch (\Exception $e) {
-            return false;
+            return $e;
         }
 
         return true;
@@ -225,11 +237,18 @@ EOT;
             if(is_dir("$dir/$file")) {
                 $this->delTree("$dir/$file");
             } else {
-                try {
-                    unlink("$dir/$file");
-                } catch (\Exception $e) {
-                    chmod("$dir/$file", 0777);
-                    unlink("$dir/$file");
+                if(file_exists("$dir/$file")) {
+                    try {
+                        unlink("$dir/$file");
+                    } catch (\Exception $e) {
+                        try {
+                            chmod("$dir/$file", 0777);
+                            unlink("$dir/$file");
+                        } catch (\Exception $e) {
+                            echo ($dir);
+                            echo $e;
+                        }
+                    }
                 }
             }
         }

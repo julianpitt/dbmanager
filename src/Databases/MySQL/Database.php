@@ -1,7 +1,7 @@
 <?php namespace JulianPitt\DBManager\Databases\MySQL;
 
+use Illuminate\Support\Facades\Config;
 use JulianPitt\DBManager\Console;
-use Config;
 use JulianPitt\DBManager\Interfaces\DatabaseInterface;
 use Mockery\CountValidator\Exception;
 
@@ -65,7 +65,7 @@ class Database implements DatabaseInterface
             escapeshellcmd($this->getSocketArgument())
         );
 
-        return $this->console->run($command, config('db-manager.output.timeoutInSeconds'));
+        return $this->console->run($command, Config::get('db-manager.output.timeoutInSeconds'));
     }
 
     /**
@@ -105,7 +105,7 @@ class Database implements DatabaseInterface
             escapeshellcmd($this->getSocketArgument())
         );
         echo($command);
-        return $this->console->run($command, config('db-manager.output.timeoutInSeconds'));
+        return $this->console->run($command, Config::get('db-manager.output.timeoutInSeconds'));
     }
 
     public function runQuery($query)
@@ -130,7 +130,7 @@ class Database implements DatabaseInterface
             escapeshellarg($query)
         );
 
-        return $this->console->run($command, config('db-manager.output.timeoutInSeconds'));
+        return $this->console->run($command, Config::get('db-manager.output.timeoutInSeconds'));
     }
 
     /**
@@ -145,7 +145,7 @@ class Database implements DatabaseInterface
 
     protected function getDumpCommandPath()
     {
-        $output = config('db-manager.mysqlbinloc');
+        $output = Config::get('db-manager.mysqlbinloc');
 
         if(empty($output)) {
             throw new \Exception('The mysql path is not set');
@@ -158,7 +158,7 @@ class Database implements DatabaseInterface
 
     protected function useExtendedInsert()
     {
-        return config('db-manager.output.useExtendedInsert');
+        return Config::get('db-manager.output.useExtendedInsert');
     }
 
     /**
@@ -169,7 +169,7 @@ class Database implements DatabaseInterface
      */
     protected function dumpType()
     {
-        $type = config('db-manager.output.backupType');
+        $type = Config::get('db-manager.output.backupType');
 
         if (empty($type)) {
             return "";
@@ -226,6 +226,7 @@ class Database implements DatabaseInterface
 
     public function checkRestoreIntegrity($commandClass)
     {
+        if(true)
         return false;
         //Check the database exists
         if (!$this->checkDatabase($this->database)) {
@@ -331,13 +332,13 @@ class Database implements DatabaseInterface
      */
     public function getTablesToBackUp()
     {
-        $backupTables = config('db-manager.output.tables');
+        $backupTables = Config::get('db-manager.output.tables');
 
         if (empty($backupTables)) {
             return "all";
         }
 
-        $tables = config('db-manager.tables.' . $backupTables);
+        $tables = Config::get('db-manager.tables.' . $backupTables);
 
         if (empty($tables)) {
             return "all";

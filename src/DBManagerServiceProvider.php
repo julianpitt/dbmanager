@@ -60,7 +60,7 @@ class DBManagerServiceProvider extends ServiceProvider
 
         $this->commands(['command.dbman:backup', 'command.dbman:restore']);
 
-         //config('config/db-manager.php');
+         //Config::get('config/db-manager.php');
     }
 
     /**
