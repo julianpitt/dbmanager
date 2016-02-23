@@ -70,10 +70,12 @@ class BackupHelper extends FileHelper
             $this->options = array_replace_recursive($this->options, ($config));
         }
 
-        //Clean up the options so they dont override the current config
-        foreach($options as $key => $option) {
-            if($option === null) {
-                unset($options[$key]);
+        if(!empty($options)) {
+            //Clean up the options so they dont override the current config
+            foreach ($options as $key => $option) {
+                if ($option === null) {
+                    unset($options[$key]);
+                }
             }
         }
 

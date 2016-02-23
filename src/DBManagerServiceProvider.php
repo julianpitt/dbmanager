@@ -41,7 +41,7 @@ class DBManagerServiceProvider extends ServiceProvider
     public function register()
     {
 
-        App::bind('dbmanager', function()
+        $this->app->bind('dbmanager', function()
         {
             return new \JulianPitt\DBManager\DBManagerClass;
         });

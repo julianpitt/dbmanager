@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Facade;
 class DBManager extends Facade {
 
     protected static function getFacadeAccessor() {
-        return '\JulianPitt\DBManager\DBManagerClass';
+        return 'dbmanager';
     }
 
 }
