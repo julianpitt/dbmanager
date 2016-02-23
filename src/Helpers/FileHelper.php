@@ -3,7 +3,7 @@
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
-use JulianPitt\DBManager\Databases\MySQLDatabase;
+use JulianPitt\DBManager\Databases\MySQL\Database;
 use League\Flysystem\FileExistsException;
 
 abstract class FileHelper
@@ -17,7 +17,7 @@ abstract class FileHelper
             return ".zip";
         }
 
-        return "." . MySQLDatabase::getFileExtension();
+        return "." . Database::getFileExtension();
     }
 
     public function prependSignature($filename)

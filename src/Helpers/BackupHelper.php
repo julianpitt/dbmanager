@@ -29,7 +29,8 @@ class BackupHelper extends FileHelper
     //TODO Remove on deployment
     private function debugThis($something)
     {
-        throw new \Exception(var_dump($something));
+        dd($something);
+        //throw new \Exception(var_dump($something));
         die;
     }
 
@@ -38,7 +39,6 @@ class BackupHelper extends FileHelper
         $this->out = $output;
     }
 
-    //TODO get the config and array merge the options passed in with the config
     private function initOptions($options = null)
     {
         //Set the default options since they are required
@@ -52,9 +52,15 @@ class BackupHelper extends FileHelper
             'location'      => "/backups/",
             'useExtendedInsert' => true,
             'timeoutInSeconds'  => 60,
-            'tables'        => "laravel",
+            'tables'        => "",
             'backupType'    => "dataandstructure",
-            'checkPermissions' => true,
+            'individualFiles'   => false,
+            'checkPermissions'  => true,
+            'failsafeEnabled'   => true,
+            'failsafe'      => [
+                'location'      => '/dbmanager/',
+                'filesystem'    => 'local'
+            ]
         ];
 
         //Then get the config options and merge it with the defaults
@@ -64,10 +70,22 @@ class BackupHelper extends FileHelper
             $this->options = array_replace_recursive($this->options, ($config));
         }
 
+        //Clean up the options so they dont override the current config
+        foreach($options as $key => $option) {
+            if($option === null) {
+                unset($options[$key]);
+            }
+        }
+
         //Finally merge the config with the passed in options
         if(!empty($options) && is_array($options)) {
             $this->options = array_replace_recursive($this->options, $options);
         }
+    }
+
+    public function getConfig()
+    {
+        return $this->options;
     }
 
     /**
@@ -141,7 +159,6 @@ class BackupHelper extends FileHelper
      */
     public function getDatabase($connectionName = '')
     {
-
         $connectionName = $connectionName ?: Config::get('database.default');
 
         $dbDriver = Config::get("database.connections.{$connectionName}.driver");
@@ -155,24 +172,45 @@ class BackupHelper extends FileHelper
 
     /**
      * Performs a database export using the mysqldump command
+     * will create a failsafe backup if dump is partial
      *
      * @param $commandClass
+     * @param bool $failsafe
      * @return string
      * @throws Exception
      */
     public function getDumpedDatabase($commandClass)
     {
 
+        $files = [];
+
         $tempFile = tempnam(sys_get_temp_dir(), "dbbackup");
 
         //Determine if you are getting certain tables or all of the database
-        if(!empty(Config::get("db-manager.output.tables"))) {
-            $passedChecks = $this->getDatabase()->checkBackupIntegrity($commandClass);
+        if(!empty($this->option('tables'))) {
+            $passedChecks = $this->getDatabase()->checkBackupIntegrity($commandClass, $this->option('tables'));
         }
 
         //This means there are specific tables to back up only
         if(!empty($passedChecks)) {
+
+            if($this->checkBooleanOption('failsafeEnabled')) {
+                $this->out->info('Failsafe: Enabled');
+                //Take a full backup for good measure
+                $fullBackupTempFile = tempnam(sys_get_temp_dir(), "dbfullbackup");
+                $success = $this->getDatabase()->dumpAll($fullBackupTempFile);
+                if (!$success || filesize($fullBackupTempFile) == 0) {
+                    throw new Exception("Could not create fail safe backup of db\n" . $success);
+                }
+                $this->prependSignature($fullBackupTempFile);
+                $files['failsafe'] = $fullBackupTempFile;
+            } else {
+                $this->out->info('Failsafe: Disabled');
+            }
+
+            //Make the partial backup
             $success = $this->getDatabase()->dumpTables($tempFile, $passedChecks);
+
         } else {
             $success = $this->getDatabase()->dumpAll($tempFile);
         }
@@ -185,12 +223,62 @@ class BackupHelper extends FileHelper
         //Write the signature
         $this->prependSignature($tempFile);
 
-        return $tempFile;
+        $files['backup'] = $tempFile;
+
+        return $files;
+    }
+
+    /**
+     * Dumps individual tables into files
+     *
+     * @param $commandClass
+     * @return array
+     * @throws Exception
+     */
+    public function getTableDump($commandClass)
+    {
+        $files = [];
+
+        //Determine if you are getting certain tables or all of the database
+
+        $tables = array_keys($this->getDatabase()->getAllTables());
+
+        if(!empty($this->option('tables'))) {
+            $passedChecks = $this->getDatabase()->checkBackupIntegrity($commandClass, $this->option('tables'));
+            if(!empty($passedChecks)) {
+                $tables = $passedChecks;
+            }
+        }
+
+        //Backup each table
+
+        foreach($tables as $tableName) {
+
+            $this->out->info('Creating backup of table ' . $tableName);
+
+            $tempFile = tempnam(sys_get_temp_dir(), "dbbackup");
+            $success = $this->getDatabase()->dumpTables($tempFile, $tableName);
+
+            //Check if the backup was successful
+            if (!$success || filesize($tempFile) == 0) {
+                throw new Exception("Could not create backup of db table \n" . $tableName);
+            }
+
+            //Write the signature
+            $this->prependSignature($tempFile);
+
+            $files[] = ['file' => $tempFile, 'tablename' => $tableName];
+        }
+
+        return ['backup' => $files];
     }
 
     public function getFilesToBeBackedUp($commandClass)
     {
-        return [$this->getDumpedDatabase($commandClass)];
+        if($this->checkBooleanOption('individualFiles')) {
+            return $this->getTableDump($commandClass);
+        }
+        return $this->getDumpedDatabase($commandClass);
     }
 
     /**
@@ -207,7 +295,7 @@ class BackupHelper extends FileHelper
 
         $disk = Storage::disk($fileSystem);
 
-        $filepath = Config::get('db-manager.output.location') . $this->getTemporaryFileName();
+        $filepath = $this->option('location') . $this->getTemporaryFileName();
 
         $testString = "Testing to see if the user can write to the output directory";
 
@@ -258,21 +346,25 @@ class BackupHelper extends FileHelper
      */
     protected function getDatabaseDump()
     {
-        $filesToBeBackedUp = $this->getFilesToBeBackedUp($this);
+        $filesToBeBackedUp = $this->getFilesToBeBackedUp($this->out);
 
-        if (count($filesToBeBackedUp) != 1) {
+        if (is_array($filesToBeBackedUp) && count($filesToBeBackedUp) < 1) {
             throw new \Exception('could not backup db');
         }
 
         $this->out->info('Database dumped');
 
-        return $filesToBeBackedUp[0];
+        return $filesToBeBackedUp;
     }
 
     protected function option($option)
     {
         try {
-            return $this->options[$option];
+            if(isset($this->options[$option])){
+                return $this->options[$option];
+            } else {
+                throw new \Exception("No option named: " . $option);
+            }
         } catch (\Exception $e) {
             throw new \Exception("No option named: " . $option);
         }
@@ -329,7 +421,22 @@ class BackupHelper extends FileHelper
     {
         $files = [];
 
-        $files[] = ['realFile' => $this->getDatabaseDump(), 'fileInZip' => 'dump.sql'];
+        $backups = $this->getDatabaseDump();
+
+        //Add the failsafe
+        if(isset($backups['failsafe'])) {
+            $files['failsafe'] = ['realFile' => $backups['failsafe'], 'fileInZip' => 'failsafedump.sql'];
+        }
+
+        //Add the requested backup
+        if(is_array($backups['backup'])) { //For individual files per table
+            $files['backup'] = [];
+            foreach($backups['backup'] as $table) {
+                 array_push($files['backup'], ['realFile' => $table['file'], 'fileInZip' => $table['tablename'] . '.sql']);
+            }
+        } else {
+            $files['backup'][] = ['realFile' => $backups['backup'], 'fileInZip' => 'dump.sql'];
+        }
 
         return $files;
     }
@@ -346,10 +453,15 @@ class BackupHelper extends FileHelper
 
         $tempZipFile = $this->getTemporaryFileDir() . $this->getTemporaryFileName();
 
+        if(!is_dir($this->getTemporaryFileDir())) {
+            mkdir($this->getTemporaryFileDir(), 0777, true);
+        }
+
+
         $zip = new ZipArchive();
         $zip->open($tempZipFile, ZipArchive::CREATE);
-
         foreach ($files as $file) {
+
             if (file_exists($file['realFile'])) {
                 $zip->addFile($file['realFile'], $file['fileInZip']);
             }
@@ -370,7 +482,29 @@ class BackupHelper extends FileHelper
      */
     protected function getTargetFileSystems()
     {
-        $fileSystems = Config::get('db-manager.output.filesystem');
+        $fileSystems = $this->option('filesystem');
+
+        if (is_array($fileSystems)) {
+            return $fileSystems;
+        }
+
+        $arrayString = $this->is_array_string($fileSystems);
+
+        if (is_array($arrayString)) {
+            return $arrayString;
+        }
+
+        return [$fileSystems];
+    }
+
+    /**
+     * Get the filesystem in use from the config
+     *
+     * @return array|mixed
+     */
+    protected function getTargetFailsafeFileSystems()
+    {
+        $fileSystems = $this->option('failsafe')['filesystem'];
 
         if (is_array($fileSystems)) {
             return $fileSystems;
@@ -421,7 +555,7 @@ class BackupHelper extends FileHelper
      */
     protected function getBackupDestinationFileName()
     {
-        $backupDirectory = Config::get('db-manager.output.location');
+        $backupDirectory = $this->option('location');
         $backupFilename = $this->getPrefix().$this->getFilename().$this->getSuffix().$this->getOutputFileType();
 
         return $backupDirectory.'/'.$backupFilename;
@@ -494,11 +628,9 @@ class BackupHelper extends FileHelper
     public function copyFileToFileSystem($file, $fileSystem, &$backupFileName = null)
     {
         $this->out->comment('Start uploading backup to '.$fileSystem.'-filesystem...');
-
         if($backupFileName === null) {
             $backupFileName = $this->getBackupDestinationFileName();
         }
-
         $result = parent::copyFileToFileSystem($file, $fileSystem, $backupFileName);
         if($result === true) {
             $this->out->comment('Backup stored on '.$fileSystem.'-filesystem in file "'.$backupFileName.'"');
@@ -509,10 +641,24 @@ class BackupHelper extends FileHelper
         return false;
     }
 
-    //This method need to be able to perform the whole backup
-    public function backup($optionsArr = null)
+    /**
+     * Accepts an array of config values to change the current config values.
+     * Used in the Fascade Accessor DBManagerClass
+     *
+     * @param $optionsArr
+     */
+    public function setOptions($optionsArr)
     {
+        $this->options = array_replace_recursive($this->options, $optionsArr);
+    }
 
+    /**
+     * Performs a database backup to the specified filesystems
+     *
+     * @return bool
+     */
+    public function backup()
+    {
         $this->out->info('Starting backup');
 
         try {
@@ -520,7 +666,7 @@ class BackupHelper extends FileHelper
              * Check if the user has access to read and write files, does the user have permission?
              */
 
-            if(filter_var($this->option('checkPermissions'), FILTER_VALIDATE_BOOLEAN)) {
+            if($this->checkBooleanOption('checkPermissions')) {
                 foreach ($this->getTargetFileSystems() as $fileSystem) {
                     $this->checkIfUserHasPermissions($fileSystem);
                 }
@@ -531,6 +677,7 @@ class BackupHelper extends FileHelper
              * Get all the tables that need to be backed up into their filenames from the dump
              */
 
+
             $files = $this->getAllTablesToBeBackedUp();
 
             if (count($files) <= 0) {
@@ -538,16 +685,33 @@ class BackupHelper extends FileHelper
                 return true;
             }
 
-
             /**
-             * Compress the backup file if needed
+             * Handle the failsafe backup if any,
+             * compress it and store to the failsafe location
              */
 
-            $compress = Config::get('db-manager.output.compress');
+            if(isset($files['failsafe'])) {
+                $backupFailsafe = $this->createZip([$files['failsafe']]);
+                if (filesize($backupFailsafe) == 0) {
+                    $this->out->warn('The failsafe zipfile has a filesize of zero.');
+                }
 
-            if (!isset($compress) || (isset($compress) && !is_bool($compress))) {
-                $compress = true;
+                /**
+                 * Copy the failsafe to your chosen location(s)
+                 */
+                foreach ($this->getTargetFailsafeFileSystems() as $fileSystem) {
+                    $backupDirectory = $this->option('failsafe')['location'] . date('YmdHis') . "failsafe.zip";
+                    $this->copyFileToFileSystem($backupFailsafe, $fileSystem, $backupDirectory);
+                }
             }
+
+            $files = $files['backup'];
+
+            /**
+             * Compress the backup file if needed, will always compress if the backup is individual
+             */
+
+            $compress = ( $this->checkBooleanOption('compress') || $this->checkBooleanOption('individualFiles') );
 
             $this->out->info("Compress output files: " . ($compress ? "True" : "False"));
 
@@ -566,7 +730,7 @@ class BackupHelper extends FileHelper
              * Delete previous backups if needed
              */
 
-            $keepLastOnly = Config::get('db-manager.output.keeplastonly');
+            $keepLastOnly = $this->option('keeplastonly');
 
             if(!isset($keepLastOnly) || (isset($keepLastOnly) && !is_bool($keepLastOnly))) {
                 $keepLastOnly = false;
@@ -599,7 +763,7 @@ class BackupHelper extends FileHelper
             $this->out->warn('An Error occurred');
             $this->out->warn("Code: " . $e->getCode());
             $this->out->warn("Message: \n". $e->getMessage());
-            $this->out->warn("Starck Trace: \n" . $e->getTraceAsString());
+            $this->out->warn("Stack Trace: \n" . $e->getTraceAsString());
         }
 
         /**
@@ -615,5 +779,21 @@ class BackupHelper extends FileHelper
         $this->out->info('Backup successfully completed');
 
         return true;
+    }
+
+    protected function checkBooleanOption($option)
+    {
+        return filter_var($this->option($option), FILTER_VALIDATE_BOOLEAN);
+    }
+
+    public function getOutputFileType()
+    {
+        $compress = ( $this->checkBooleanOption('compress') || $this->checkBooleanOption('individualFiles') );
+
+        if (!isset($compress) || (isset($compress) && !is_bool($compress)) || (isset($compress) && is_bool($compress) && $compress)) {
+            return ".zip";
+        }
+
+        return "." . Database::getFileExtension();
     }
 }

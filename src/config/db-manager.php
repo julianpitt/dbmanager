@@ -43,9 +43,15 @@ return [
         'location'      => env('DBMAN_OUTPUT_LOCATION', "/backups/"),
         'useExtendedInsert' => true,
         'timeoutInSeconds'  => 60,
-        'tables'        => env('DBMAN_OUTPUT_TABLES', "laravel"),
+        'tables'        => env('DBMAN_OUTPUT_TABLES', ""),
         'backupType'    => env('DBMAN_OUTPUT_BACKUPTYPE', "dataandstructure"),
-        'checkPermissions' => env('DBMAN_CHECK_PERMISSIONS', true),
+        'individualFiles'   => env('DBMAN_OUTPUT_INDIVIDUAL', false),
+        'checkPermissions'  => env('DBMAN_CHECK_PERMISSIONS', true),
+        'failsafeEnabled'   => env('DBMAN_OUTPUT_FAILSAFE', true),
+        'failsafe'      => [
+            'location'      => '/dbmanager/',
+            'filesystem'    => 'local'
+        ]
     ],
 
     'tables' => [

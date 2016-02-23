@@ -17,7 +17,6 @@ class DBManagerClass
     {
         // constructor body
         $this->backupClass = new BackupHelper();
-
     }
 
     public function hasPermission()
@@ -27,9 +26,21 @@ class DBManagerClass
         return $result;
     }
 
-    public function backup()
+    /**
+     * Performs a backup and changes the default config with the config array passed in
+     *
+     * @param null $options
+     * @return bool
+     */
+    public function backup($options = null)
     {
-        $this->backupClass->backup();
+        $this->backupClass->setOptions($options);
+        return $this->backupClass->backup($options);
+    }
+
+    public function getConfig()
+    {
+        return $this->backupClass->getConfig();
     }
 
 }

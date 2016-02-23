@@ -7,8 +7,8 @@ interface DatabaseInterface
 
     public function dumpAll($destinationFile);
     public function dumpTables($destinationFile, $tables);
-    public function checkBackupIntegrity($callIngClass);
-    public function checkRestoreIntegrity($callIngClass);
+    public function checkBackupIntegrity($callIngClass, $tables);
+    public function checkRestoreIntegrity($callIngClass, $tables);
     public static function getFileExtension();
 
 }

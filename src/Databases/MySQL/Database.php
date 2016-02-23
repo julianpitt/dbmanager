@@ -95,16 +95,18 @@ class Database implements DatabaseInterface
 
         $temporaryCredentialsFile = stream_get_meta_data($tempFileHandle)['uri'];
 
+        $tables = (is_array($tablesToBackUp) ? implode("\" \"", $tablesToBackUp) : $tablesToBackUp);
+
         $command = sprintf('%smysqldump --defaults-extra-file=%s --skip-comments ' . ($this->useExtendedInsert() ? '--extended-insert' : '--skip-extended-insert') . ' %s %s "%s" > %s %s',
             $this->getDumpCommandPath(),
             escapeshellarg($temporaryCredentialsFile),
             $this->dumpType(),
             escapeshellarg($this->database),
-            implode("\" \"", $tablesToBackUp),
+            $tables,
             escapeshellarg($destinationFile),
             escapeshellcmd($this->getSocketArgument())
         );
-        echo($command);
+
         return $this->console->run($command, Config::get('db-manager.output.timeoutInSeconds'));
     }
 
@@ -214,26 +216,26 @@ class Database implements DatabaseInterface
      * @return int
      * @throws \Exception
      */
-    public function checkBackupIntegrity($commandClass)
+    public function checkBackupIntegrity($commandClass, $tables)
     {
         //Check the database exists
         if (!$this->checkDatabase($this->database)) {
             throw new \Exception("Integrity check failed! No " . $this->database . " database found");
         }
 
-        return $this->checkTablesForBackup($this->database, $commandClass);
+        return $this->checkTablesForBackup($this->database, $commandClass, $tables);
     }
 
-    public function checkRestoreIntegrity($commandClass)
+    public function checkRestoreIntegrity($commandClass, $tables)
     {
-        if(true)
-        return false;
+        return false; //diabled until implemented correctly
+
         //Check the database exists
         if (!$this->checkDatabase($this->database)) {
             throw new \Exception("Integrity check failed! No " . $this->database . " database found");
         }
 
-        return $this->checkTablesForInsert($this->database, $commandClass);
+        return $this->checkTablesForInsert($this->database, $commandClass, $tables);
     }
 
     /**
@@ -253,16 +255,28 @@ class Database implements DatabaseInterface
     }
 
     /**
+     * Returns an associative array with all the tables as keys and an array of all the column as the value from the passed in database
+     *
+     * @param $database
+     * @return array
+     */
+    public function getAllTables()
+    {
+        return $this->convertObjArr($this->queries->getTablesAndColumns($this->database));
+    }
+
+    /**
      * Checks the schema and tables in the schema of the table you would like to back up
      * to make sure everything runs smoothly
      *
      * @param $database
      * @return array
      */
-    public function checkTables($database)
+    public function checkTables($database, $tables)
     {
-        $tablesToBackUp = $this->getTablesToBackUp();
-        $tablesInDatabase = $this->convertObjArr($this->queries->getTablesAndColumns($database));
+        $tablesToBackUp = $this->getTablesToBackUp($tables);
+        $tablesInDatabase = $this->getAllTables($database);
+
         $foundTables = [];
 
         $index = 0;
@@ -281,9 +295,9 @@ class Database implements DatabaseInterface
         ];
     }
 
-    public function checkTablesForInsert($database, $commandClass)
+    public function checkTablesForInsert($database, $commandClass, $tables)
     {
-        $tables = $this->checkTables($database);
+        $tables = $this->checkTables($database, $tables);
 
         $commandClass->info("The following tables were found: \n-" . implode("\n-", $tables["found"]));
 
@@ -304,9 +318,9 @@ class Database implements DatabaseInterface
      * @return mixed
      * @throws \Exception
      */
-    public function checkTablesForBackup($database, $commandClass)
+    public function checkTablesForBackup($database, $commandClass, $tables)
     {
-        $tables = $this->checkTables($database);
+        $tables = $this->checkTables($database, $tables);
 
         $commandClass->info("The following tables were found: \n-" . implode("\n-", $tables["found"]));
 
@@ -330,9 +344,9 @@ class Database implements DatabaseInterface
      *
      * @return Config|string
      */
-    public function getTablesToBackUp()
+    public function getTablesToBackUp($tables)
     {
-        $backupTables = Config::get('db-manager.output.tables');
+        $backupTables = $tables;
 
         if (empty($backupTables)) {
             return "all";

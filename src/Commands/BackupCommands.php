@@ -43,7 +43,9 @@ class BackupCommands extends Command
             ['type', 't', InputOption::VALUE_REQUIRED, 'The type of dump to perform on the database ("datanadstructure/dataonly/structureonly)'],
             ['keeplastonly', 'k', InputOption::VALUE_REQUIRED, 'Keep the last backup or delete all previous backups (true/false)'],
             ['compress', 'c', InputOption::VALUE_REQUIRED, 'Compress the output file to .zip (true/false)'],
-            ['checkPermissions', 'd', InputOption::VALUE_REQUIRED, 'Enable an initial check to see if the backup will run correctly', true],
+            ['checkPermissions', 'd', InputOption::VALUE_REQUIRED, 'Enable an initial check to see if the backup will run correctly'],
+            ['failsafeEnabled', 'b', InputOption::VALUE_REQUIRED, 'Save a full backup in the failsafe location when performing a backup on some tables only'],
+            ['individualFiles', 'i', InputOption::VALUE_REQUIRED, 'Save each table to an individual file'],
         ];
     }
 
