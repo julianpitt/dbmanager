@@ -21,7 +21,11 @@ class ConsoleOutput implements OutputInterface
 
     public function warn($msg)
     {
-        $this->cmd->warn($msg);
+        if(method_exists($this->cmd, 'warn')) {
+            $this->cmd->warn($msg);
+        } else {
+            $this->cmd->error($msg);
+        }
     }
 
     public function comment($msg)

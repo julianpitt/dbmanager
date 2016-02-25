@@ -2,6 +2,19 @@
 
 All Notable changes to `julianpitt\dbmanager` will be documented in this file
 
+## 1.0.3.2 | 2016-02-25
+
+#### Changed
+- Added 'public' tag to config for publishing
+
+#### Fixed
+- Console warn does not exist error on < laravel 5.1
+
+## 1.0.3.1 | 2016-02-24
+
+#### Changed
+- Changed Facade to return IOC reference
+
 ## 1.0.3 | 2016-02-24
 
 #### Added

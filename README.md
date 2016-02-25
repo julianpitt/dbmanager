@@ -20,7 +20,7 @@ Add the service provider to your config/app.php file's provider array
 Then publish the config after you update composer
 
 ``` bash
-$ php artisan vendor:publish --provider="JulianPitt\DBManager\DBManagerServiceProvider"
+$ php artisan vendor:publish --provider="JulianPitt\DBManager\DBManagerServiceProvider" --tag="public"
 ```
 
 

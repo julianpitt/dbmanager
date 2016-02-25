@@ -24,7 +24,7 @@ class DBManagerServiceProvider extends ServiceProvider
     {
          $this->publishes([
                  __DIR__.'/config/db-manager.php' => config_path('db-manager.php'),
-         ]);
+         ], 'public');
 
 
          $this->mergeConfigFrom(
@@ -60,7 +60,6 @@ class DBManagerServiceProvider extends ServiceProvider
 
         $this->commands(['command.dbman:backup', 'command.dbman:restore']);
 
-         //Config::get('config/db-manager.php');
     }
 
     /**
