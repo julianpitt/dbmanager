@@ -69,14 +69,20 @@ Tables Backed Up: $tablesBackedUp
 */
 EOT;
 
+        //Open the backup file as a stream
         $context = stream_context_create();
         $fp = fopen($filename, 'r', 1, $context);
+
+        //Create a temporary file with a random name and append the signature then backup
         $tmpname = md5($string);
         file_put_contents($tmpname, $string);
         file_put_contents($tmpname, $fp, FILE_APPEND);
         fclose($fp);
-        unlink($filename);
-        rename($tmpname, $filename);
+
+        $copySuccess = copy($tmpname, $filename);
+        unlink($tmpname);
+
+        return $copySuccess;
     }
 
 

@@ -204,7 +204,11 @@ class BackupHelper extends FileHelper
                 if (!$success || filesize($fullBackupTempFile) == 0) {
                     throw new Exception("Could not create fail safe backup of db\n" . $success);
                 }
-                $this->prependSignature($fullBackupTempFile);
+
+                if(!$this->prependSignature($fullBackupTempFile)) {
+                    $this->out->warn('Unable to prepend signature');
+                }
+
                 $files['failsafe'] = $fullBackupTempFile;
             } else {
                 $this->out->info('Failsafe: Disabled');
@@ -223,7 +227,9 @@ class BackupHelper extends FileHelper
         }
 
         //Write the signature
-        $this->prependSignature($tempFile);
+        if ($this->prependSignature($tempFile)) {
+            $this->out->warn('Unable to prepend signature');
+        }
 
         $files['backup'] = $tempFile;
 
@@ -267,7 +273,9 @@ class BackupHelper extends FileHelper
             }
 
             //Write the signature
-            $this->prependSignature($tempFile);
+            if($this->prependSignature($tempFile)) {
+                $this->out->warn('Unable to prepend signature');
+            }
 
             $files[] = ['file' => $tempFile, 'tablename' => $tableName];
         }
