@@ -2,6 +2,11 @@
 
 All Notable changes to `julianpitt\dbmanager` will be documented in this file
 
+## 1.0.3.3 | 2016-02-25
+
+#### Fixed
+- Changed how prependSignature works and to continue in the event of an error
+
 ## 1.0.3.2 | 2016-02-25
 
 #### Changed
