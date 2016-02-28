@@ -2,6 +2,11 @@
 
 All Notable changes to `julianpitt\dbmanager` will be documented in this file
 
+## 1.0.3.4 | 2016-02-29
+
+#### Fixed
+- No settings passed to backup in fascade causing an error
+
 ## 1.0.3.3 | 2016-02-25
 
 #### Fixed

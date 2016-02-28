@@ -34,7 +34,9 @@ class DBManagerClass
      */
     public function backup($options = null)
     {
-        $this->backupClass->setOptions($options);
+        if(is_array($options) && !empty($options)) {
+            $this->backupClass->setOptions($options);
+        }
         return $this->backupClass->backup($options);
     }
 
